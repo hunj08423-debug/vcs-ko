@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>페이지 만들기 — 그림으로 읽는 성경</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700&family=Noto+Serif+KR:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="exhibit.css">
+<style>
+.tool{display:flex;flex-direction:column;gap:20px;padding-top:28px;padding-bottom:40px;max-width:880px}
+.step{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px 24px}
+.step h2{font-size:21px;margin-bottom:6px}
+.step p{margin:0 0 10px;color:var(--ink2)}
+.drop{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:130px;border:2px dashed var(--line);border-radius:14px;text-align:center;padding:16px;cursor:pointer;color:var(--muted)}
+.drop.over{border-color:var(--accent);background:var(--soft)}
+.drop b{color:var(--ink);font-size:17px}
+.drop input{position:absolute;width:1px;height:1px;opacity:0}
+.rep{list-style:none;margin:12px 0 0;padding:0}
+.rep li{padding:8px 0;border-top:1px solid var(--line)}
+.ok{color:light-dark(#1F6B3A,#7BD39A);font-weight:700}
+.warn{color:light-dark(#8A4B12,#F0C38E);font-weight:700}
+.bad{color:light-dark(#A0281C,#F29B8F);font-weight:700}
+.note{border-top:1px solid var(--line);padding:12px 0}
+.note label{display:flex;gap:8px;align-items:center;font-weight:700}
+.note input[type=checkbox]{width:20px;height:20px}
+.note textarea{width:100%;min-height:76px;margin-top:8px;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:15px/1.6 var(--sans)}
+.note .why{margin:6px 0 0;font-size:14px}
+.howto{margin:12px 0 0;padding-left:22px;color:var(--ink2)}
+.howto li{margin:4px 0}
+.caution{margin-top:12px;padding:10px 14px;border-radius:10px;background:var(--soft);font-size:15px}
+.linkbox{display:flex;flex-direction:column;gap:6px;margin:14px 0 10px;font-weight:700}
+.linkbox input{width:100%;min-height:44px;padding:8px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:14px/1.4 ui-monospace,Menlo,Consolas,monospace}
+#preview{border-top:6px solid var(--accent)}
+#preview:empty{display:none}
+@media print{.tool,.vx-top.tool-top{display:none!important}#preview{border:0}}
+</style>
+</head>
+<body>
+<header class="vx-top tool-top no-print"><div class="vx-wrap">
+  <div class="vx-bar"><nav class="vx-crumb" aria-label="현재 위치"><a class="vx-brand" href="index.html"><b>그림으로 읽는 성경</b><small>VCS 해설 한국어 번역</small></a><span aria-hidden="true">›</span><span>페이지 만들기</span></nav></div>
+  <h1 id="tool-title" style="margin-top:14px">전시 페이지 만들기</h1>
+  <p class="vx-meta">대조본 파일을 넣으면 페이지를 미리 보고, VCS에 보낼 검토용 링크와 PDF, 공개용 번역 파일을 만들 수 있어요.</p>
+</div></header>
+
+<main class="vx-wrap tool no-print">
+  <section class="step">
+    <h2>1. 대조본 파일 넣기</h2>
+    <p>원문·번역 대조본(.docx)을 끌어다 놓거나 골라 주세요. 파일은 이 브라우저 안에서만 읽고, 어디에도 보내지 않아요.</p>
+    <label class="drop" id="drop"><b>여기에 대조본을 끌어다 놓기</b><span>또는 눌러서 파일 고르기</span><input type="file" id="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"></label>
+    <ul class="rep" id="report" aria-live="polite"></ul>
+  </section>
+
+  <section class="step" id="step2" hidden>
+    <h2>2. 옮긴이 주 고르기</h2>
+    <p>해설 속 ‘(역주: …)’를 따로 뽑았어요. 사이트에 실을 것만 고르고, 필요하면 고쳐 주세요. 고치면 아래 미리보기에 바로 반영돼요.</p>
+    <div id="notes"></div>
+  </section>
+
+  <section class="step" id="step3" hidden>
+    <h2>3. VCS에 보낼 검토용 링크 만들기</h2>
+    <p>아래 미리보기를 끝까지 읽어 본 뒤 단추를 누르세요. 번역을 잠근 파일과, 그 잠금을 여는 링크가 한 쌍으로 생겨요. 링크가 없는 사람에게는 빈 틀만 보이고, 검토용 링크에서는 문장마다 영어 원문을 켜고 끌 수 있어요.</p>
+    <div class="vx-btns"><button type="button" class="vx-btn solid" id="seal">검토용 링크 만들기</button></div>
+    <div id="sealOut" hidden>
+      <label class="linkbox">검토용 링크<input id="reviewUrl" readonly></label>
+      <div class="vx-btns"><button type="button" class="vx-btn" id="copy">링크 복사</button><a class="vx-btn" id="openReview" target="_blank" rel="noopener">새 창에서 열어 보기 ↗</a></div>
+      <ol class="howto">
+        <li>방금 내려받은 <b id="rname">annunciation.review.js</b> 파일을 GitHub의 vcs-ko 저장소 <code>text</code> 폴더에 올리세요. ‘Add file → Upload files’로 끌어다 놓고 ‘Commit changes’를 누르면, 같은 이름의 빈 파일이 바뀌어요.</li>
+        <li>1~2분 뒤 ‘새 창에서 열어 보기’로 번역이 열리는지 확인하세요.</li>
+        <li>확인되면 링크를 복사해서 Joost님께 보내세요.</li>
+      </ol>
+      <p class="caution">링크와 파일은 한 쌍이에요. 단추를 다시 누르면 새 쌍이 생기니, 마지막에 받은 파일을 올리고 마지막 링크를 보내세요.</p>
+    </div>
+  </section>
+
+  <section class="step" id="step4" hidden>
+    <h2>4. PDF와 공개용 번역 파일</h2>
+    <p>PDF는 검토용 링크와 함께 보내면 좋아요. 공개용 번역 파일은 VCS가 승인한 뒤에 씁니다.</p>
+    <div class="vx-btns">
+      <button type="button" class="vx-btn" id="pdf">PDF로 저장</button>
+      <button type="button" class="vx-btn" id="dl">공개용 번역 파일 내려받기</button>
+    </div>
+    <p class="caution"><b>공개용 번역 파일은 VCS가 승인한 뒤에 올려 주세요.</b> 올리는 순간 누구나 볼 수 있게 됩니다. 이 파일에는 영어 원문이 들어가지 않아요.</p>
+    <ol class="howto">
+      <li>PDF로 저장: 인쇄 창이 뜨면 ‘대상’을 ‘PDF로 저장’으로 고르고 저장합니다. 영어 원문을 켜 둔 채 저장하면 PDF에도 함께 들어가요.</li>
+      <li>승인을 받으면 ‘공개용 번역 파일 내려받기’를 누르고, 생긴 <span id="fname">annunciation.js</span> 파일을 같은 방법으로 <code>text</code> 폴더에 올립니다.</li>
+      <li>그다음 Claude에게 “공개해 줘”라고 하면 검색 차단을 풀고 첫 화면에 연결해 드려요.</li>
+    </ol>
+  </section>
+</main>
+
+<div id="preview"></div>
+
+<script>
+(() => {
+  'use strict';
+  const $ = id => document.getElementById(id);
+  const W = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+  const qs = new URLSearchParams(location.search);
+  const exId = /^[a-z0-9-]+$/.test(qs.get('e') || '') ? qs.get('e') : 'annunciation';
+  let EX = null, rows = null, notes = [], fileName = '', timer = 0;
+
+  const s = document.createElement('script');
+  s.src = `data/${exId}.js`;
+  s.onload = () => { EX = window.VCS_EXHIBIT; $('tool-title').textContent = `전시 페이지 만들기 — ${EX.title}`; $('fname').textContent = `${EX.id}.js`; $('rname').textContent = `${EX.id}.review.js`; };
+  s.onerror = () => say('bad', `전시 자료(data/${exId}.js)를 찾지 못했어요.`);
+  document.head.append(s);
+  const ready = () => new Promise(res => { const t = () => (EX && window.VCSExhibit ? res() : setTimeout(t, 30)); t(); });
+
+  function say(cls, msg) { const li = document.createElement('li'); li.innerHTML = ''; const b = document.createElement('span'); b.className = cls; b.textContent = cls === 'ok' ? '✓ ' : cls === 'warn' ? '! ' : '✗ '; li.append(b, msg); $('report').append(li); }
+
+  /* .docx(zip) 안에서 파일 하나 꺼내기 — 바깥 도구 없이 브라우저 기능만 쓴다 */
+  async function unzip(buf, name) {
+    const dv = new DataView(buf), u8 = new Uint8Array(buf), dec = new TextDecoder();
+    let eocd = -1;
+    for (let i = buf.byteLength - 22; i >= Math.max(0, buf.byteLength - 65557); i--) if (dv.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
+    if (eocd < 0) throw new Error('docx 파일이 아니에요.');
+    const count = dv.getUint16(eocd + 10, true);
+    let p = dv.getUint32(eocd + 16, true);
+    for (let k = 0; k < count; k++) {
+      if (dv.getUint32(p, true) !== 0x02014b50) break;
+      const method = dv.getUint16(p + 10, true), csize = dv.getUint32(p + 20, true);
+      const nlen = dv.getUint16(p + 28, true), elen = dv.getUint16(p + 30, true), clen = dv.getUint16(p + 32, true);
+      const off = dv.getUint32(p + 42, true);
+      if (dec.decode(u8.subarray(p + 46, p + 46 + nlen)) === name) {
+        const start = off + 30 + dv.getUint16(off + 26, true) + dv.getUint16(off + 28, true);
+        const data = u8.subarray(start, start + csize);
+        if (method === 0) return dec.decode(data);
+        if (method === 8) {
+          if (!('DecompressionStream' in window)) throw new Error('이 브라우저는 docx를 열 수 없어요. 최신 크롬·엣지·사파리로 열어 주세요.');
+          const out = await new Response(new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer();
+          return dec.decode(out);
+        }
+        throw new Error('열 수 없는 압축 방식이에요.');
+      }
+      p += 46 + nlen + elen + clen;
+    }
+    throw new Error('docx 안에 본문(word/document.xml)이 없어요.');
+  }
+
+  function paraText(p) {
+    let out = '';
+    const walk = n => {
+      for (const c of n.children) {
+        if (c.localName === 't') out += c.textContent;
+        else if (c.localName === 'tab' || c.localName === 'br' || c.localName === 'cr') out += ' ';
+        else if (c.localName !== 'pPr' && c.localName !== 'rPr') walk(c);
+      }
+    };
+    walk(p);
+    return out;
+  }
+  const kids = (n, name) => [...n.children].filter(c => c.localName === name);
+  const cellText = tc => kids(tc, 'p').map(paraText).join(' ').replace(/\s+/g, ' ').trim();
+
+  function readTables(xml) {
+    const doc = new DOMParser().parseFromString(xml, 'application/xml');
+    const body = doc.getElementsByTagNameNS(W, 'body')[0];
+    if (!body) throw new Error('본문을 읽지 못했어요.');
+    const found = [];
+    let heading = '';
+    for (const node of body.children) {
+      if (node.localName === 'p') {
+        const st = node.getElementsByTagNameNS(W, 'pStyle')[0];
+        const val = st ? (st.getAttributeNS(W, 'val') || st.getAttribute('w:val') || '') : '';
+        if (/heading|제목/i.test(val)) heading = paraText(node).trim();
+      } else if (node.localName === 'tbl') {
+        const trs = kids(node, 'tr');
+        if (!trs.length) continue;
+        const head = kids(trs[0], 'tc').map(cellText);
+        if (head.length >= 3 && head[0].includes('#') && head[2].includes('번역')) {
+          found.push({ heading, rows: trs.slice(1).map(tr => { const c = kids(tr, 'tc').map(cellText); return { n: parseInt(c[0], 10), en: c[1] || '', ko: c[2] || '' }; }) });
+        }
+      }
+    }
+    return found;
+  }
+
+  /* '(역주: …)'를 따로 떼어 낸다 */
+  function splitNotes(text) {
+    const parts = [];
+    let rest = text;
+    for (;;) {
+      const i = rest.search(/\(역주\s*[:：]/);
+      if (i < 0) { parts.push(rest); break; }
+      let depth = 0, j = i;
+      for (; j < rest.length; j++) { if (rest[j] === '(') depth++; else if (rest[j] === ')' && --depth === 0) break; }
+      if (j >= rest.length) { parts.push(rest); break; }
+      parts.push(rest.slice(0, i), { tn: rest.slice(i + 1, j).replace(/^역주\s*[:：]\s*/, '').trim() });
+      rest = rest.slice(j + 1);
+    }
+    return parts.filter(x => x !== '');
+  }
+
+  function build() {
+    const out = { exhibit: EX.id, made: new Date().toISOString().slice(0, 10), source: fileName, sections: {} };
+    for (const id of EX.order) {
+      const r = rows[id];
+      if (!r) continue;
+      const s = {};
+      for (const row of r.rows) {
+        const segs = [];
+        for (const part of row.parts) {
+          if (typeof part === 'string') { if (typeof segs[segs.length - 1] === 'string') segs[segs.length - 1] += part; else segs.push(part); continue; }
+          const nt = notes[part.k];
+          if (nt.keep && nt.text.trim()) segs.push({ tn: nt.text.trim() });
+        }
+        s[String(row.n)] = segs.length === 1 && typeof segs[0] === 'string' ? segs[0] : segs;
+      }
+      out.sections[id] = { title: r.title, s };
+    }
+    return out;
+  }
+
+  /* 영어 원문 — 검토용 잠금 파일에만 넣는다. 공개용 번역 파일(build)에는 들어가지 않는다. */
+  function buildOrig() {
+    const o = {};
+    for (const id of EX.order) {
+      const r = rows[id];
+      if (!r) continue;
+      o[id] = {};
+      for (const row of r.rows) if (row.en) o[id][String(row.n)] = row.en;
+    }
+    return o;
+  }
+
+  function preview() {
+    clearTimeout(timer);
+    $('sealOut').hidden = true;
+    timer = setTimeout(() => window.VCSExhibit.render($('preview'), EX, build(), { preview: true, orig: buildOrig(), site: window.VCS_SITE }), 120);
+  }
+
+  function save(name, body) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([body], { type: 'text/javascript' }));
+    a.download = name;
+    document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  }
+
+  function showNotes() {
+    const box = $('notes');
+    box.replaceChildren();
+    if (!notes.length) { box.textContent = '옮긴이 주가 없어요.'; return; }
+    notes.forEach((nt, k) => {
+      const sec = EX.sections[nt.sec];
+      const where = sec.kind === 'work' ? `그림 ${sec.no}` : '비교 해설';
+      const d = document.createElement('div'); d.className = 'note';
+      const lab = document.createElement('label');
+      const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = nt.keep;
+      cb.addEventListener('change', () => { nt.keep = cb.checked; preview(); });
+      lab.append(cb, `${where} · ${nt.n}번 문장의 옮긴이 주 싣기`);
+      const ta = document.createElement('textarea'); ta.value = nt.text; ta.setAttribute('aria-label', `${where} ${nt.n}번 문장의 옮긴이 주`);
+      ta.addEventListener('input', () => { nt.text = ta.value; preview(); });
+      d.append(lab, ta);
+      if (nt.why) { const p = document.createElement('p'); p.className = 'why warn'; p.textContent = nt.why; d.append(p); }
+      box.append(d);
+    });
+  }
+
+  async function handle(file) {
+    $('report').replaceChildren();
+    $('step2').hidden = true; $('step3').hidden = true; $('step4').hidden = true; $('sealOut').hidden = true; $('preview').replaceChildren();
+    if (!file) return;
+    await ready();
+    fileName = file.name;
+    try {
+      const tables = readTables(await unzip(await file.arrayBuffer(), 'word/document.xml'));
+      if (!tables.length) { say('bad', '‘#·원문·번역’ 세 칸으로 된 표를 찾지 못했어요. 대조본이 맞는지 확인해 주세요.'); return; }
+      rows = {}; notes = [];
+      const left = tables.slice();
+      for (const id of EX.order) {
+        const sec = EX.sections[id];
+        const label = sec.kind === 'work' ? `그림 ${sec.no} · ${sec.work.artist}` : '비교 해설';
+        const i = left.findIndex(t => sec.match.some(m => t.heading.includes(m)));
+        if (i < 0) { say('bad', `${label}: 대조본에서 찾지 못했어요.`); continue; }
+        const t = left.splice(i, 1)[0];
+        const m = [...t.heading.matchAll(/「([^」]+)」/g)];
+        const title = m.length ? m[m.length - 1][1] : '';
+        const nums = t.rows.map(r => r.n);
+        const okNums = nums.every((n, j) => n === j + 1);
+        const r = { title, rows: t.rows.map(row => ({ n: row.n, en: row.en, parts: splitNotes(row.ko).map(p => {
+          if (typeof p === 'string') return p;
+          const k = notes.length;
+          const refs = /다시 확인|맨 끝/.test(p.tn);
+          const here = /표 아래|대조본|탭/.test(p.tn);
+          notes.push({ sec: id, n: row.n, text: p.tn, keep: !refs,
+            why: refs ? '원문을 다시 확인할 곳을 다룬 주예요. VCS에 따로 알리기로 해서, 처음에는 빼 두었어요.' : here ? '대조본 안의 다른 자리를 가리키는 말이 있어요. 사이트에 맞게 고쳐 주세요.' : '' });
+          return { k };
+        }) })) };
+        rows[id] = r;
+        const blank = t.rows.filter(x => !x.ko).length;
+        if (t.rows.length !== sec.sentences || !okNums) say('warn', `${label}: 대조본은 ${t.rows.length}문장, 이 전시 자료는 ${sec.sentences}문장이에요. 번호가 1부터 빠짐없이 이어지는지 확인해 주세요.`);
+        else say('ok', `${label} — 「${title || '제목 없음'}」 ${t.rows.length}문장`);
+        if (blank) say('warn', `${label}: 번역 칸이 빈 문장이 ${blank}개 있어요.`);
+      }
+      if (!Object.keys(rows).length) return;
+      showNotes();
+      $('step2').hidden = false; $('step3').hidden = false; $('step4').hidden = false;
+      preview();
+    } catch (err) {
+      say('bad', err.message || String(err));
+    }
+  }
+
+  const drop = $('drop'), input = $('file');
+  input.addEventListener('change', () => handle(input.files[0]));
+  ['dragenter', 'dragover'].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.add('over'); }));
+  ['dragleave', 'drop'].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.remove('over'); }));
+  drop.addEventListener('drop', e => { const f = e.dataTransfer.files[0]; if (f) handle(f); });
+  $('pdf').addEventListener('click', () => window.print());
+  const today = () => new Date().toISOString().slice(0, 10);
+  $('dl').addEventListener('click', () => {
+    save(`${EX.id}.js`, `/* 「${EX.title}」 한국어 번역문(공개용) — make.html에서 ${today()}에 만듦 (대조본: ${fileName.replace(/\*\//g, '')}) */\nwindow.VCS_TEXT = ${JSON.stringify(build(), null, 1)};\n`);
+  });
+  $('seal').addEventListener('click', async () => {
+    if (!window.crypto || !crypto.subtle) { say('bad', '이 브라우저에서는 잠금 파일을 만들 수 없어요. 최신 크롬·엣지·사파리로 사이트 주소에서 열어 주세요.'); return; }
+    const { box, key } = await window.VCSExhibit.seal({ text: build(), orig: buildOrig() });
+    save(`${EX.id}.review.js`, `/* 「${EX.title}」 VCS 검토용 잠금 파일 — make.html에서 ${today()}에 만듦. 함께 만든 링크로만 열린다. */\nwindow.VCS_REVIEW = ${JSON.stringify(box)};\n`);
+    const base = (window.VCS_SITE && window.VCS_SITE.url) || new URL('.', location.href).href;
+    const url = `${base}${EX.id}.html#review=${key}`;
+    $('reviewUrl').value = url; $('openReview').href = url;
+    $('sealOut').hidden = false;
+    $('reviewUrl').focus(); $('reviewUrl').select();
+  });
+  $('copy').addEventListener('click', async () => {
+    const v = $('reviewUrl').value;
+    try { await navigator.clipboard.writeText(v); $('copy').textContent = '복사했어요'; }
+    catch (_) { $('reviewUrl').select(); document.execCommand && document.execCommand('copy'); $('copy').textContent = '복사했어요'; }
+    setTimeout(() => { $('copy').textContent = '링크 복사'; }, 1800);
+  });
+})();
+</script>
+<script src="site.js"></script>
+<script src="exhibit.js"></script>
+</body>
+</html>
