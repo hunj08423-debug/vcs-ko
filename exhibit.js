@@ -358,7 +358,7 @@
       }
       main.append(bar);
     }
-    if (opts.reviewFailed) main.append(el('p', { class: 'vx-pending' }, '검토용 링크로 번역을 열지 못했어요. 링크 끝까지 빠짐없이 복사됐는지 확인해 주세요. · ', el('span', { lang: 'en' }, 'This preview link could not open the translation. Please check that the whole link was copied.')));
+    if (opts.reviewFailed) main.append(el('p', { class: 'vx-pending' }, '검토용 링크로 번역을 열지 못했어요. 링크가 끝까지 복사됐는지, 지금 올라가 있는 잠금 파일과 한 쌍인지 확인해 주세요. 파일을 막 올렸다면 1~2분 뒤에 다시 열어 보세요. · ', el('span', { lang: 'en' }, 'This preview link could not open the translation. If the file was just updated, please try again in a minute or two.')));
     if (!T) main.append(el('p', { class: 'vx-pending' }, '해설 번역은 VCS의 확인을 받은 뒤 이 자리에 실립니다. 지금은 문장 번호와 그림 속 자리만 보입니다.'));
 
     /* 본문과 구절 지도 */
@@ -523,8 +523,9 @@
     enc(buf) { const u = new Uint8Array(buf); let s = ''; for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000)); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); },
     dec(str) { let t = String(str).replace(/-/g, '+').replace(/_/g, '/'); while (t.length % 4) t += '='; const s = atob(t), u = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i); return u; }
   };
-  async function seal(obj) {
-    const raw = crypto.getRandomValues(new Uint8Array(32)), iv = crypto.getRandomValues(new Uint8Array(12));
+  async function seal(obj, keyStr) {
+    const raw = keyStr ? b64u.dec(keyStr) : crypto.getRandomValues(new Uint8Array(32)), iv = crypto.getRandomValues(new Uint8Array(12));
+    if (raw.length !== 32) throw new Error('열쇠의 길이가 맞지 않아요.');
     const key = await crypto.subtle.importKey('raw', raw, 'AES-GCM', false, ['encrypt']);
     const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, new TextEncoder().encode(JSON.stringify(obj)));
     return { box: { v: 1, iv: b64u.enc(iv), ct: b64u.enc(ct) }, key: b64u.enc(raw) };
@@ -535,6 +536,14 @@
     return JSON.parse(new TextDecoder().decode(pt));
   }
 
+  /* 검토 파일은 브라우저에 남은 예전 것이 아니라 언제나 사이트의 지금 파일을 받아 온다. */
+  const loadFresh = src => new Promise(res => {
+    const s = document.createElement('script');
+    s.src = location.protocol === 'file:' ? src : `${src}?t=${Date.now()}`;
+    s.onload = () => res(true); s.onerror = () => res(false);
+    document.head.append(s);
+  });
+
   /* 전시 페이지 시작: 검토용 링크면 잠긴 번역을 열고, 아니면 공개 번역(없으면 빈 틀)을 그린다. */
   async function boot(root, ex) {
     const site = window.VCS_SITE;
@@ -542,17 +551,19 @@
     const store = 'vcs-review-' + ex.id;
     let key = m ? m[1] : null;
     try { if (key) sessionStorage.setItem(store, key); else key = sessionStorage.getItem(store); } catch (_) { }
-    if (key) {
-      if (window.VCS_REVIEW && window.crypto && crypto.subtle) {
-        try {
-          const p = await unseal(window.VCS_REVIEW, key);
-          if (p && p.text && p.text.exhibit === ex.id) return render(root, ex, p.text, { site, preview: true, orig: p.orig || null });
-        } catch (_) { }
-      }
-      return render(root, ex, window.VCS_TEXT || null, { site, reviewFailed: !!m });
+    if (!key) return render(root, ex, window.VCS_TEXT || null, { site });
+    root.replaceChildren(el('p', { class: 'vx-opening' }, '검토용 번역을 여는 중… · Opening the preview…'));
+    window.VCS_REVIEW = null;
+    await loadFresh(`text/${ex.id}.review.js`);
+    if (window.VCS_REVIEW && window.crypto && crypto.subtle) {
+      try {
+        const p = await unseal(window.VCS_REVIEW, key);
+        if (p && p.text && p.text.exhibit === ex.id) return render(root, ex, p.text, { site, preview: true, orig: p.orig || null });
+      } catch (_) { }
     }
-    return render(root, ex, window.VCS_TEXT || null, { site });
+    if (!m) { try { sessionStorage.removeItem(store); } catch (_) { } }
+    return render(root, ex, window.VCS_TEXT || null, { site, reviewFailed: !!m });
   }
 
-  window.VCSExhibit = { render, boot, seal, unseal, footer, version: '2' };
+  window.VCSExhibit = { render, boot, seal, unseal, footer, version: '3' };
 })();

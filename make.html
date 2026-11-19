@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700&family=Noto+Serif+KR:wght@600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="exhibit.css">
+<link rel="stylesheet" href="exhibit.css?v=3">
 <style>
 .tool{display:flex;flex-direction:column;gap:20px;padding-top:28px;padding-bottom:40px;max-width:880px}
 .step{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px 24px}
@@ -32,6 +32,9 @@
 .howto li{margin:4px 0}
 .caution{margin-top:12px;padding:10px 14px;border-radius:10px;background:var(--soft);font-size:15px}
 .linkbox{display:flex;flex-direction:column;gap:6px;margin:14px 0 10px;font-weight:700}
+.keep{margin-top:14px;border-top:1px solid var(--line);padding-top:10px}
+.keep summary{cursor:pointer;font-weight:700;color:var(--ink2)}
+.keep input{width:100%;min-height:44px;margin-top:6px;padding:8px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:14px/1.4 ui-monospace,Menlo,Consolas,monospace}
 .linkbox input{width:100%;min-height:44px;padding:8px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:14px/1.4 ui-monospace,Menlo,Consolas,monospace}
 #preview{border-top:6px solid var(--accent)}
 #preview:empty{display:none}
@@ -71,8 +74,14 @@
         <li>1~2분 뒤 ‘새 창에서 열어 보기’로 번역이 열리는지 확인하세요.</li>
         <li>확인되면 링크를 복사해서 Joost님께 보내세요.</li>
       </ol>
-      <p class="caution">링크와 파일은 한 쌍이에요. 단추를 다시 누르면 새 쌍이 생기니, 마지막에 받은 파일을 올리고 마지막 링크를 보내세요.</p>
+      <p class="caution">이 브라우저에서는 검토용 링크가 늘 같아요. 내용을 고쳐 다시 만들면 새로 받은 파일만 다시 올리면 되고, 링크는 그대로 써도 됩니다.</p>
     </div>
+    <details class="keep">
+      <summary>다른 컴퓨터에서 만든 링크를 계속 쓰려면</summary>
+      <p>이미 보낸 검토용 링크를 아래 칸에 붙여 넣은 뒤 ‘검토용 링크 만들기’를 누르세요. 그 링크의 열쇠로 잠가서, 같은 링크로 열려요.</p>
+      <input id="oldLink" placeholder="https://…#review=…" aria-label="이미 보낸 검토용 링크">
+      <p id="oldNote" class="why"></p>
+    </details>
   </section>
 
   <section class="step" id="step4" hidden>
@@ -87,6 +96,7 @@
       <li>PDF로 저장: 인쇄 창이 뜨면 ‘대상’을 ‘PDF로 저장’으로 고르고 저장합니다. 영어 원문을 켜 둔 채 저장하면 PDF에도 함께 들어가요.</li>
       <li>승인을 받으면 ‘공개용 번역 파일 내려받기’를 누르고, 생긴 <span id="fname">annunciation.js</span> 파일을 같은 방법으로 <code>text</code> 폴더에 올립니다.</li>
       <li>그다음 Claude에게 “공개해 줘”라고 하면 검색 차단을 풀고 첫 화면에 연결해 드려요.</li>
+      <li>올린 뒤 페이지가 바로 안 바뀌면 1~2분 기다린 다음, Ctrl+Shift+R(맥은 Cmd+Shift+R)로 새로 고침해 보세요. 브라우저가 예전 파일을 잠시 기억하고 있을 수 있어요.</li>
     </ol>
   </section>
 </main>
@@ -103,7 +113,7 @@
   let EX = null, rows = null, notes = [], fileName = '', timer = 0;
 
   const s = document.createElement('script');
-  s.src = `data/${exId}.js`;
+  s.src = `data/${exId}.js?v=3`;
   s.onload = () => { EX = window.VCS_EXHIBIT; $('tool-title').textContent = `전시 페이지 만들기 — ${EX.title}`; $('fname').textContent = `${EX.id}.js`; $('rname').textContent = `${EX.id}.review.js`; };
   s.onerror = () => say('bad', `전시 자료(data/${exId}.js)를 찾지 못했어요.`);
   document.head.append(s);
@@ -317,13 +327,24 @@
   });
   $('seal').addEventListener('click', async () => {
     if (!window.crypto || !crypto.subtle) { say('bad', '이 브라우저에서는 잠금 파일을 만들 수 없어요. 최신 크롬·엣지·사파리로 사이트 주소에서 열어 주세요.'); return; }
-    const { box, key } = await window.VCSExhibit.seal({ text: build(), orig: buildOrig() });
+    const store = `vcs-ko-review-key-${EX.id}`;
+    const pasted = /#review=([A-Za-z0-9_-]{43})\b/.exec($('oldLink').value || '');
+    let keep = pasted ? pasted[1] : null;
+    if (!keep) { try { keep = localStorage.getItem(store); } catch (_) { } }
+    let box, key;
+    try { ({ box, key } = await window.VCSExhibit.seal({ text: build(), orig: buildOrig() }, keep || undefined)); }
+    catch (_) { ({ box, key } = await window.VCSExhibit.seal({ text: build(), orig: buildOrig() })); }
+    try { localStorage.setItem(store, key); } catch (_) { }
     save(`${EX.id}.review.js`, `/* 「${EX.title}」 VCS 검토용 잠금 파일 — make.html에서 ${today()}에 만듦. 함께 만든 링크로만 열린다. */\nwindow.VCS_REVIEW = ${JSON.stringify(box)};\n`);
     const base = (window.VCS_SITE && window.VCS_SITE.url) || new URL('.', location.href).href;
     const url = `${base}${EX.id}.html#review=${key}`;
     $('reviewUrl').value = url; $('openReview').href = url;
     $('sealOut').hidden = false;
     $('reviewUrl').focus(); $('reviewUrl').select();
+  });
+  $('oldLink').addEventListener('input', () => {
+    const v = $('oldLink').value.trim();
+    $('oldNote').textContent = !v ? '' : /#review=[A-Za-z0-9_-]{43}\b/.test(v) ? '이 링크의 열쇠로 잠글게요. 이제 ‘검토용 링크 만들기’를 누르세요.' : '검토용 링크가 아닌 것 같아요. #review= 로 끝까지 이어진 링크를 붙여 넣어 주세요.';
   });
   $('copy').addEventListener('click', async () => {
     const v = $('reviewUrl').value;
@@ -333,7 +354,7 @@
   });
 })();
 </script>
-<script src="site.js"></script>
-<script src="exhibit.js"></script>
+<script src="site.js?v=3"></script>
+<script src="exhibit.js?v=3"></script>
 </body>
 </html>
