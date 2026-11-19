@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>그림 위 번호 찍기 — 그림으로 읽는 성경</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700&family=Noto+Serif+KR:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="exhibit.css?v=5">
+<style>
+/* 그림 위 번호 찍기 — 해설 문장 번호마다 그림 속 자리(핀·네모)와 이름, '그림에서 볼 것'을 적는 작업대.
+   좌표는 전시 페이지와 같다: 가로는 0~ref, 세로는 0~ref×h/w. */
+.sp-main{max-width:1600px;margin:0 auto;padding:16px max(2vw,12px) 40px;display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:20px;align-items:start}
+.sp-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}
+.sp-tabs{display:flex;flex-wrap:wrap;gap:6px}
+.sp-tabs button,.sp-modes button,.sp-tools button,.sp-zoom button{min-height:40px;padding:0 14px;border-radius:20px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:600 14px/1 var(--sans);cursor:pointer}
+.sp-tabs button[aria-pressed=true],.sp-modes button[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.sp-modes{display:flex;gap:6px}
+.sp-zoom{display:flex;gap:6px;align-items:center;margin-left:auto}
+.sp-wall{position:relative;height:calc(100vh - 150px);min-height:420px;overflow:auto;background:#24211d;border-radius:10px}
+.sp-pic{position:relative;margin:0 auto;user-select:none;-webkit-user-select:none;touch-action:none}
+.sp-pic img{display:block;width:100%;height:auto;pointer-events:none;-webkit-user-drag:none}
+.sp-pic.pin{cursor:crosshair}.sp-pic.box{cursor:crosshair}.sp-pic.pan{cursor:grab}
+.sp-pin{position:absolute;width:28px;height:28px;margin:-14px 0 0 -14px;border-radius:50%;border:2px solid #fff;background:var(--pin);color:#fff;font:700 13px/24px var(--sans);text-align:center;box-shadow:0 0 0 2px rgba(0,0,0,.5);pointer-events:none}
+.sp-pin.off{opacity:.45}
+.sp-box{position:absolute;border:3px solid #2FB7F0;box-shadow:0 0 0 2px rgba(0,0,0,.5);pointer-events:none}
+.sp-box.off{border-color:rgba(47,183,240,.45);box-shadow:none}
+.sp-box span{position:absolute;left:-3px;bottom:100%;margin-bottom:4px;background:rgba(20,22,26,.9);color:#fff;font:500 12px/1.35 var(--sans);padding:2px 7px;border-radius:4px;white-space:nowrap}
+.sp-temp{position:absolute;border:2px dashed #fff;background:rgba(47,183,240,.15);pointer-events:none}
+.sp-side{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto;display:flex;flex-direction:column;gap:12px}
+.sp-card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.sp-card h2{font-size:18px;margin:0 0 8px}
+.sp-card p{margin:0 0 8px;font-size:14px;color:var(--ink2)}
+.sp-list{display:flex;flex-wrap:wrap;gap:6px}
+.sp-list button{min-width:40px;height:36px;border-radius:18px;border:1.5px solid var(--pin);background:transparent;color:light-dark(var(--pin),#7FC6EC);font:700 14px/1 var(--sans);cursor:pointer}
+.sp-list button[aria-pressed=true]{background:var(--pin);color:#fff}
+.sp-list button.empty{border-style:dashed}
+.sp-field{display:flex;flex-direction:column;gap:4px;margin:8px 0;font-size:14px;font-weight:700}
+.sp-field input,.sp-field textarea{width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:400 15px/1.5 var(--sans)}
+.sp-field textarea{min-height:76px}
+.sp-items{list-style:none;margin:6px 0 0;padding:0;font-size:14px}
+.sp-items li{display:flex;gap:8px;align-items:center;padding:4px 0;border-top:1px solid var(--line)}
+.sp-items li input{flex:1;padding:4px 8px;border-radius:6px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:14px/1.4 var(--sans)}
+.sp-items button,.sp-tools .del{border:0;background:none;color:light-dark(#A0281C,#F29B8F);font:700 13px var(--sans);cursor:pointer}
+.sp-tools{display:flex;flex-wrap:wrap;gap:6px}
+.sp-out{width:100%;min-height:120px;margin-top:8px;padding:8px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:12px/1.4 ui-monospace,Menlo,Consolas,monospace}
+.sp-help{font-size:13px;color:var(--muted)}
+.sp-new{display:grid;gap:6px}
+@media (max-width:1000px){.sp-main{grid-template-columns:minmax(0,1fr)}.sp-side{position:static;max-height:none}.sp-wall{height:70vh}}
+</style>
+</head>
+<body>
+<header class="vx-top tool-top"><div class="vx-wrap">
+  <div class="vx-bar"><nav class="vx-crumb" aria-label="현재 위치"><a class="vx-brand" href="index.html"><b>그림으로 읽는 성경</b><small>VCS 해설 한국어 번역</small></a><span aria-hidden="true">›</span><span>그림 위 번호 찍기</span></nav></div>
+  <h1 id="title" style="margin-top:14px">그림 위 번호 찍기</h1>
+  <p class="vx-meta">해설 문장 번호마다 그림 속 자리를 찍고, 이름과 ‘그림에서 볼 것’을 적어요. 작업은 이 브라우저에 저절로 저장돼요.</p>
+</div></header>
+
+<div class="sp-main">
+  <section aria-label="그림">
+    <div class="sp-bar">
+      <div class="sp-tabs" id="tabs" role="group" aria-label="그림 고르기"></div>
+      <div class="sp-modes" role="group" aria-label="찍는 방법">
+        <button type="button" data-mode="pin" aria-pressed="true">핀 찍기</button>
+        <button type="button" data-mode="box" aria-pressed="false">네모 그리기</button>
+        <button type="button" data-mode="pan" aria-pressed="false">옮겨 보기</button>
+      </div>
+      <div class="sp-zoom"><button type="button" id="zout" aria-label="작게">−</button><span id="zval">100%</span><button type="button" id="zin" aria-label="크게">+</button></div>
+    </div>
+    <div class="sp-wall" id="wall"><div class="sp-pic pin" id="pic"></div></div>
+    <p class="sp-help">핀 찍기: 그림을 누르면 고른 번호의 핀이 생겨요. 네모 그리기: 그림 위를 끌어서 네모를 그려요. 옮겨 보기: 끌어서 그림을 옮겨요. 휠이나 −·+로 크기를 바꿔요.</p>
+  </section>
+
+  <aside class="sp-side">
+    <div class="sp-card" id="addCard">
+      <h2>그림 더하기</h2>
+      <p>새 전시라면 그림 파일을 여기서 열어요. 이미 만든 전시는 주소 끝에 <code>?e=전시이름</code>을 붙여 열면 그 전시의 그림과 번호가 불러와져요.</p>
+      <div class="sp-new">
+        <label class="sp-field">그림 이름 (예: 그림 1 · 로세티)<input id="newName"></label>
+        <label class="sp-field">짧은 영어 이름 (예: rossetti)<input id="newId" pattern="[a-z0-9-]+"></label>
+        <label class="sp-field">그림 파일<input id="newFile" type="file" accept="image/*"></label>
+      </div>
+    </div>
+
+    <div class="sp-card">
+      <h2>문장 번호</h2>
+      <div class="sp-list" id="list"></div>
+      <div class="sp-tools" style="margin-top:10px">
+        <button type="button" id="addN">번호 더하기</button>
+        <button type="button" class="del" id="delN">이 번호 지우기</button>
+      </div>
+    </div>
+
+    <div class="sp-card" id="edit" hidden>
+      <h2 id="editTitle">번호</h2>
+      <label class="sp-field">문장 번호<input id="fN" type="number" min="1" step="1"></label>
+      <label class="sp-field">그림 위 이름 (짧게)<input id="fLabel" placeholder="예: 막 내려앉은 가브리엘"></label>
+      <label class="sp-field">그림에서 볼 것 (사이트가 덧붙이는 글)<textarea id="fLook" placeholder="그림에서 눈으로 확인할 수 있는 것만, 쉬운 말로"></textarea></label>
+      <p style="margin:10px 0 0;font-weight:700">핀</p>
+      <ul class="sp-items" id="pins"></ul>
+      <p style="margin:10px 0 0;font-weight:700">네모 (위에 붙일 짧은 이름은 비워 둬도 돼요)</p>
+      <ul class="sp-items" id="boxes"></ul>
+    </div>
+
+    <div class="sp-card">
+      <h2>내보내기</h2>
+      <p>다 찍었으면 ‘복사’를 눌러 Claude에게 붙여 넣거나, 파일로 받아 보내 주세요.</p>
+      <div class="sp-tools">
+        <button type="button" id="copy">복사</button>
+        <button type="button" id="save">파일로 받기</button>
+        <button type="button" id="load">붙여 넣은 자료 불러오기</button>
+        <button type="button" class="del" id="reset">저장된 작업 지우기</button>
+      </div>
+      <textarea class="sp-out" id="out" aria-label="내보낸 자료" placeholder="여기에 자료가 나와요. 예전에 내보낸 자료를 붙여 넣고 ‘불러오기’를 누르면 이어서 할 수 있어요."></textarea>
+    </div>
+  </aside>
+</div>
+
+<script src="site.js?v=5"></script>
+<script>
+(() => {
+  'use strict';
+  const $ = id => document.getElementById(id);
+  const qs = new URLSearchParams(location.search);
+  const exId = /^[a-z0-9-]+$/.test(qs.get('e') || '') ? qs.get('e') : '';
+  const store = `vcs-spots-${exId || 'new'}`;
+  /* works: { id: { name, src, w, h, ref, file, spots:[{n,label,look,boxes,tags,pins}] } } */
+  let works = {}, order = [], cur = null, sel = null, mode = 'pin', zoom = 1, drag = null;
+
+  const H0 = w => w.ref * w.h / w.w;
+  const clone = o => JSON.parse(JSON.stringify(o));
+  function persist() { try { localStorage.setItem(store, JSON.stringify({ order, works: Object.fromEntries(order.map(id => [id, { ...works[id], src: works[id].local ? '' : works[id].src }])) })); } catch (_) { } }
+  function exportText() {
+    const out = {};
+    for (const id of order) { const w = works[id]; out[id] = { name: w.name, file: w.file || '', image: { w: w.w, h: w.h, ref: w.ref }, spots: w.spots.slice().sort((a, b) => a.n - b.n) }; }
+    return JSON.stringify({ exhibit: exId || '', made: new Date().toISOString().slice(0, 10), works: out }, null, 1);
+  }
+
+  function addWork(id, w) { if (!works[id]) order.push(id); works[id] = w; }
+  function fromData(ex) {
+    for (const id of ex.order) {
+      const s = ex.sections[id];
+      if (s.kind !== 'work') continue;
+      addWork(id, { name: `그림 ${s.no} · ${s.work.artist}`, src: s.image.hi || s.image.lo, w: s.image.w, h: s.image.h, ref: s.image.ref, file: '', spots: clone(s.spots || []).map(sp => ({ n: sp.n, label: sp.label || '', look: sp.look || '', boxes: sp.boxes || [], tags: sp.tags || [], tagAt: sp.tagAt, pins: sp.pins || [] })) });
+    }
+  }
+
+  /* 그리기 */
+  function tabs() {
+    $('tabs').replaceChildren(...order.map(id => { const b = document.createElement('button'); b.type = 'button'; b.textContent = works[id].name || id; b.setAttribute('aria-pressed', String(id === cur)); b.onclick = () => { cur = id; sel = null; draw(); }; return b; }));
+  }
+  function picture() {
+    const pic = $('pic'), w = works[cur];
+    pic.replaceChildren(); pic.className = 'sp-pic ' + mode;
+    if (!w) return;
+    if (!w.src) { pic.textContent = '그림을 다시 열어 주세요 (브라우저를 닫으면 내 컴퓨터에서 연 그림은 다시 골라야 해요).'; pic.style.cssText = 'color:#fff;padding:24px'; return; }
+    pic.style.cssText = `width:${Math.round(baseWidth() * zoom)}px`;
+    const img = document.createElement('img'); img.src = w.src; img.alt = w.name; pic.append(img);
+    const h0 = H0(w);
+    for (const sp of w.spots) {
+      const off = sel !== null && sp.n !== sel;
+      sp.boxes.forEach((b, j) => {
+        const d = document.createElement('div'); d.className = 'sp-box' + (off ? ' off' : '');
+        d.style.left = b[0] / w.ref * 100 + '%'; d.style.top = b[1] / h0 * 100 + '%';
+        d.style.width = (b[2] - b[0]) / w.ref * 100 + '%'; d.style.height = (b[3] - b[1]) / h0 * 100 + '%';
+        if (!off && sp.tags && sp.tags[j]) { const t = document.createElement('span'); t.textContent = sp.tags[j]; d.append(t); }
+        pic.append(d);
+      });
+      sp.pins.forEach(q => {
+        const d = document.createElement('div'); d.className = 'sp-pin' + (off ? ' off' : ''); d.textContent = sp.n;
+        d.style.left = q[0] / w.ref * 100 + '%'; d.style.top = q[1] / h0 * 100 + '%'; pic.append(d);
+      });
+    }
+    $('zval').textContent = Math.round(zoom * 100) + '%';
+  }
+  function baseWidth() { const wall = $('wall'), w = works[cur]; if (!w) return 600; const ar = w.w / w.h; return Math.max(200, Math.min(wall.clientWidth - 24, (wall.clientHeight - 24) * ar)); }
+  function list() {
+    const w = works[cur];
+    $('list').replaceChildren(...(w ? w.spots.slice().sort((a, b) => a.n - b.n) : []).map(sp => {
+      const b = document.createElement('button'); b.type = 'button'; b.textContent = sp.n;
+      b.className = sp.pins.length || sp.boxes.length ? '' : 'empty';
+      b.setAttribute('aria-pressed', String(sp.n === sel)); b.title = sp.label || '';
+      b.onclick = () => { sel = sel === sp.n ? null : sp.n; draw(); }; return b;
+    }));
+  }
+  function editor() {
+    const w = works[cur], sp = w && w.spots.find(s => s.n === sel);
+    $('edit').hidden = !sp;
+    if (!sp) return;
+    $('editTitle').textContent = `${sp.n}번 문장`;
+    $('fN').value = sp.n; $('fLabel').value = sp.label; $('fLook').value = sp.look;
+    const li = (txt, onDel, extra) => { const l = document.createElement('li'); const s = document.createElement('span'); s.textContent = txt; l.append(s); if (extra) l.append(extra); const d = document.createElement('button'); d.type = 'button'; d.textContent = '지우기'; d.onclick = onDel; l.append(d); return l; };
+    $('pins').replaceChildren(...sp.pins.map((q, i) => li(`(${q[0]}, ${q[1]})`, () => { sp.pins.splice(i, 1); changed(); })));
+    $('boxes').replaceChildren(...sp.boxes.map((b, i) => {
+      const t = document.createElement('input'); t.value = (sp.tags && sp.tags[i]) || ''; t.placeholder = '네모 위 이름';
+      t.oninput = () => { sp.tags = sp.tags || []; sp.tags[i] = t.value; persist(); picture(); out(); };
+      return li(`네모 ${i + 1}`, () => { sp.boxes.splice(i, 1); if (sp.tags) sp.tags.splice(i, 1); changed(); }, t);
+    }));
+  }
+  function out() { $('out').value = exportText(); }
+  function draw() { tabs(); picture(); list(); editor(); out(); }
+  function changed() { persist(); draw(); }
+
+  /* 그림 위에서 찍고 그리기 */
+  const pos = e => { const r = $('pic').getBoundingClientRect(), w = works[cur]; return [Math.round(Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * w.ref), Math.round(Math.max(0, Math.min(1, (e.clientY - r.top) / r.height)) * H0(w))]; };
+  const need = () => { const w = works[cur]; if (!w || !w.src) return null; let sp = w.spots.find(s => s.n === sel); if (!sp) { alert('먼저 오른쪽에서 문장 번호를 고르거나 더해 주세요.'); return null; } return sp; };
+  $('pic').addEventListener('pointerdown', e => {
+    if (!works[cur] || e.button > 0) return;
+    if (mode === 'pan') { drag = { x: e.clientX, y: e.clientY, sl: $('wall').scrollLeft, st: $('wall').scrollTop, pan: true }; $('pic').setPointerCapture(e.pointerId); return; }
+    const sp = need(); if (!sp) return;
+    if (mode === 'pin') { sp.pins.push(pos(e)); changed(); return; }
+    const p = pos(e), t = document.createElement('div'); t.className = 'sp-temp'; $('pic').append(t);
+    drag = { p, t, sp }; $('pic').setPointerCapture(e.pointerId);
+  });
+  $('pic').addEventListener('pointermove', e => {
+    if (!drag) return;
+    if (drag.pan) { $('wall').scrollLeft = drag.sl - (e.clientX - drag.x); $('wall').scrollTop = drag.st - (e.clientY - drag.y); return; }
+    const w = works[cur], q = pos(e), a = drag.p, h0 = H0(w);
+    const x0 = Math.min(a[0], q[0]), y0 = Math.min(a[1], q[1]), x1 = Math.max(a[0], q[0]), y1 = Math.max(a[1], q[1]);
+    Object.assign(drag.t.style, { left: x0 / w.ref * 100 + '%', top: y0 / h0 * 100 + '%', width: (x1 - x0) / w.ref * 100 + '%', height: (y1 - y0) / h0 * 100 + '%' });
+    drag.q = q;
+  });
+  $('pic').addEventListener('pointerup', () => {
+    if (!drag) return;
+    const d = drag; drag = null;
+    if (d.pan) return;
+    d.t.remove();
+    if (!d.q) return;
+    const a = d.p, q = d.q, box = [Math.min(a[0], q[0]), Math.min(a[1], q[1]), Math.max(a[0], q[0]), Math.max(a[1], q[1])];
+    if (box[2] - box[0] < 6 || box[3] - box[1] < 6) return;
+    d.sp.boxes.push(box); d.sp.tags = d.sp.tags || []; while (d.sp.tags.length < d.sp.boxes.length) d.sp.tags.push('');
+    changed();
+  });
+  document.querySelectorAll('.sp-modes button').forEach(b => b.addEventListener('click', () => {
+    mode = b.dataset.mode; document.querySelectorAll('.sp-modes button').forEach(x => x.setAttribute('aria-pressed', String(x === b))); picture();
+  }));
+  const setZoom = z => { const wall = $('wall'), cx = (wall.scrollLeft + wall.clientWidth / 2) / Math.max(1, $('pic').offsetWidth), cy = (wall.scrollTop + wall.clientHeight / 2) / Math.max(1, $('pic').offsetHeight); zoom = Math.max(1, Math.min(6, z)); picture(); requestAnimationFrame(() => { wall.scrollLeft = cx * $('pic').offsetWidth - wall.clientWidth / 2; wall.scrollTop = cy * $('pic').offsetHeight - wall.clientHeight / 2; }); };
+  $('zin').onclick = () => setZoom(zoom * 1.5); $('zout').onclick = () => setZoom(zoom / 1.5);
+  $('wall').addEventListener('wheel', e => { if (!works[cur]) return; e.preventDefault(); setZoom(zoom * Math.exp(-e.deltaY * 0.002)); }, { passive: false });
+  window.addEventListener('resize', () => picture());
+
+  /* 오른쪽 칸 */
+  $('addN').onclick = () => {
+    const w = works[cur]; if (!w) { alert('먼저 그림을 열어 주세요.'); return; }
+    const used = new Set(w.spots.map(s => s.n)); let n = 1; while (used.has(n)) n++;
+    const v = parseInt(prompt('몇 번 문장인가요?', String(n)) || '', 10);
+    if (!v || v < 1) return;
+    if (!used.has(v)) w.spots.push({ n: v, label: '', look: '', boxes: [], tags: [], pins: [] });
+    sel = v; changed();
+  };
+  $('delN').onclick = () => { const w = works[cur]; if (!w || sel === null) return; if (!confirm(`${sel}번의 핀·네모·글을 모두 지울까요?`)) return; w.spots = w.spots.filter(s => s.n !== sel); sel = null; changed(); };
+  $('fN').onchange = () => { const w = works[cur], sp = w.spots.find(s => s.n === sel), v = parseInt($('fN').value, 10); if (!sp || !v || w.spots.some(s => s.n === v && s !== sp)) { $('fN').value = sel; return; } sp.n = v; sel = v; changed(); };
+  $('fLabel').oninput = () => { const sp = works[cur].spots.find(s => s.n === sel); sp.label = $('fLabel').value; persist(); out(); list(); };
+  $('fLook').oninput = () => { const sp = works[cur].spots.find(s => s.n === sel); sp.look = $('fLook').value; persist(); out(); };
+
+  $('newFile').onchange = () => {
+    const f = $('newFile').files[0]; if (!f) return;
+    const id = ($('newId').value || '').trim().toLowerCase() || `work${order.length + 1}`;
+    if (!/^[a-z0-9-]+$/.test(id)) { alert('짧은 영어 이름은 영어 소문자, 숫자, - 만 써 주세요.'); return; }
+    const url = URL.createObjectURL(f), im = new Image();
+    im.onload = () => {
+      const old = works[id];
+      addWork(id, { name: $('newName').value.trim() || id, src: url, local: true, file: f.name, w: im.naturalWidth, h: im.naturalHeight, ref: old ? old.ref : 1000, spots: old ? old.spots : [] });
+      cur = id; sel = null; zoom = 1; changed();
+    };
+    im.src = url;
+  };
+  $('copy').onclick = async () => { out(); try { await navigator.clipboard.writeText($('out').value); $('copy').textContent = '복사했어요'; } catch (_) { $('out').select(); document.execCommand && document.execCommand('copy'); $('copy').textContent = '복사했어요'; } setTimeout(() => { $('copy').textContent = '복사'; }, 1600); };
+  $('save').onclick = () => { out(); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([$('out').value], { type: 'application/json' })); a.download = `spots-${exId || 'new'}.json`; document.body.append(a); a.click(); a.remove(); };
+  $('load').onclick = () => {
+    try {
+      const o = JSON.parse($('out').value);
+      for (const [id, v] of Object.entries(o.works || {})) {
+        const old = works[id];
+        addWork(id, { name: v.name || id, src: old ? old.src : '', local: old ? old.local : true, file: v.file || '', w: v.image.w, h: v.image.h, ref: v.image.ref, spots: v.spots || [] });
+      }
+      cur = cur || order[0]; changed();
+    } catch (_) { alert('자료를 읽지 못했어요. 내보낸 자료를 그대로 붙여 넣어 주세요.'); }
+  };
+
+  $('reset').onclick = () => { if (!confirm('이 브라우저에 저장된 작업을 지우고 처음 자료로 돌아갈까요? 내보내지 않은 작업은 사라져요.')) return; try { localStorage.removeItem(store); } catch (_) { } location.reload(); };
+
+  /* 시작: 저장된 작업 → 전시 자료 → 빈 작업대 */
+  const start = () => {
+    let saved = null; try { saved = JSON.parse(localStorage.getItem(store) || 'null'); } catch (_) { }
+    if (saved && saved.order && saved.order.length) {
+      for (const id of saved.order) { const v = saved.works[id], old = works[id]; addWork(id, { ...v, src: v.src || (old ? old.src : '') }); }
+    }
+    cur = order[0] || null; draw();
+  };
+  if (exId) {
+    $('addCard').parentNode.append($('addCard'));
+    $('title').textContent = `그림 위 번호 찍기 — ${exId}`;
+    const s = document.createElement('script');
+    s.src = `data/${exId}.js?v=5`;
+    s.onload = () => { if (window.VCS_EXHIBIT) { fromData(window.VCS_EXHIBIT); $('title').textContent = `그림 위 번호 찍기 — ${window.VCS_EXHIBIT.title}`; } start(); };
+    s.onerror = () => { alert(`전시 자료(data/${exId}.js)를 찾지 못했어요. 그림 파일을 직접 열어 주세요.`); start(); };
+    document.head.append(s);
+  } else start();
+})();
+</script>
+</body>
+</html>
