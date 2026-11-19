@@ -107,20 +107,28 @@
     this.ov.append(this.boxes);
     this.load = el('div', { class: 'vx-load' }, '고화질 그림을 불러오는 중');
     this.stage = el('div', { class: 'vx-stage', role: 'group', tabindex: '0', 'aria-label': `${sec.work.title} 확대 보기. 번호 단추를 누르면 그 부분으로 다가갑니다.` }, this.world, this.ov, this.load);
-    this.stage.style.setProperty('--ar', String(im.w / im.h));
-    const zb = (label, txt, fn) => el('button', { type: 'button', 'aria-label': label, onclick: fn }, txt);
+    this.ar = im.w / im.h;
+    this.stage.style.setProperty('--ar', String(this.ar));
+    const zb = (label, txt, fn, cls) => el('button', { type: 'button', 'aria-label': label, class: cls || null, onclick: fn }, txt);
+    this.fullBtn = zb('그림을 화면 가득 크게 보기', '크게 보기 ⤢', () => (this.isFull ? this.closeFull() : this.openFull('self')), 'big');
+    this.bareBtn = zb('해설 글 숨기기', '글 숨기기', () => this.toggleBare(), 'only-full');
+    this.hint = el('span', { class: 'hint' }, '끌어서 옮기기 · 두 손가락이나 Ctrl+휠로 확대');
     this.ctl = el('div', { class: 'vx-ctl' },
+      this.fullBtn,
       zb('줄이기', '−', () => this.zoomAt(1 / 1.6, this.W / 2, this.H / 2, 300)),
       zb('키우기', '+', () => this.zoomAt(1.6, this.W / 2, this.H / 2, 300)),
       zb('그림 전체 보기', '전체', () => onPick(null, 'home')),
-      el('span', { class: 'hint' }, '끌어서 옮기기 · 두 손가락이나 Ctrl+휠로 확대'));
+      this.bareBtn, this.hint);
     const w = sec.work;
     const pc = sec.credit && sec.credit.author ? sec.credit : null;
-    this.cap = el('p', { class: 'vx-cap' }, el('b', null, w.artist), el('br'), `${w.title}, ${w.date}`, el('br'), `${w.medium} · ${w.place}`,
-      pc ? [el('br'), el('span', { class: 'vx-photo' }, '사진: ', photoCredit(pc))] : null);
+    this.cap = el('p', { class: 'vx-cap' }, el('span', { class: 'l' }, el('b', null, w.artist), el('br'), `${w.title}, ${w.date}`, el('br'), `${w.medium} · ${w.place}`),
+      pc ? el('span', { class: 'vx-photo' }, '사진: ', photoCredit(pc)) : null);
     this.card = el('div', { class: 'vx-spot', 'aria-live': 'polite' });
-    this.root = el('div', { class: 'vx-viewer' }, this.stage, this.ctl, this.cap, this.card);
-    this.root.style.setProperty('--ar', String(im.w / im.h));
+    this.panel = el('div', { class: 'vx-panel' }, this.ctl, this.cap, this.card);
+    this.closeX = el('button', { type: 'button', class: 'vx-closefull', 'aria-label': '크게 보기 닫기', onclick: () => this.closeFull() }, '✕');
+    this.root = el('div', { class: 'vx-viewer' }, this.stage, this.panel, this.closeX);
+    this.root.style.setProperty('--ar', String(this.ar));
+    this.isFull = false;
     this.onPick = onPick;
     this.showCard();
     this.bind();
@@ -200,11 +208,54 @@
       this.card.replaceChildren(
         el('h3', null, el('span', { class: 'no' }, String(a.n)), a.label),
         a.look ? el('p', { class: 'look' }, el('b', null, '그림에서 볼 것'), a.look) : null,
+        this.isFull ? sentenceNode(this.id, a.n) : null,
         el('div', { class: 'nav' },
           el('button', { type: 'button', disabled: prev === null, onclick: () => prev !== null && this.onPick(prev, 'nav') }, '이전'),
           el('button', { type: 'button', disabled: next === null, onclick: () => next !== null && this.onPick(next, 'nav') }, '다음'),
           el('button', { type: 'button', onclick: () => this.onPick(null, 'home') }, '전체 그림'),
           el('button', { type: 'button', class: 'back', onclick: () => { const s = document.getElementById(`${this.id}-s${a.n}`); if (s) s.scrollIntoView({ behavior: smooth(), block: 'center' }); } }, '해설로 돌아가기')));
+    },
+    openFull(from) {
+      if (this.isFull) return;
+      this.isFull = true; this.from = from || 'self';
+      this.prevFocus = document.activeElement;
+      this.root.classList.add('vx-fullmode');
+      this.layoutFull();
+      document.documentElement.classList.add('vx-noscroll');
+      this.fullBtn.textContent = '작게 보기'; this.fullBtn.setAttribute('aria-label', '크게 보기 닫기');
+      this.hint.textContent = '휠이나 두 손가락으로 확대 · 끌어서 옮기기 · ← → 번호 넘기기';
+      this.onResizeFull = () => this.layoutFull();
+      window.addEventListener('resize', this.onResizeFull);
+      if (this.root.requestFullscreen && !document.fullscreenElement) { try { const r = this.root.requestFullscreen(); if (r && r.catch) r.catch(() => { }); } catch (_) { } }
+      this.showCard();
+      requestAnimationFrame(() => { this.measure(); this.select(this.active, 0); try { this.stage.focus({ preventScroll: true }); } catch (_) { } });
+    },
+    layoutFull() {
+      const wide = window.innerWidth > 760 && window.innerWidth / Math.max(1, window.innerHeight) > this.ar * 1.1;
+      this.root.classList.toggle('side', wide && !this.root.classList.contains('bare'));
+    },
+    toggleBare() {
+      const bare = this.root.classList.toggle('bare');
+      this.bareBtn.textContent = bare ? '글 보기' : '글 숨기기';
+      this.layoutFull();
+      requestAnimationFrame(() => { this.measure(); this.select(this.active, 0); });
+    },
+    closeFull() {
+      if (!this.isFull) return;
+      this.isFull = false;
+      this.root.classList.remove('vx-fullmode', 'side', 'bare');
+      this.bareBtn.textContent = '글 숨기기';
+      document.documentElement.classList.remove('vx-noscroll');
+      this.fullBtn.textContent = '크게 보기 ⤢'; this.fullBtn.setAttribute('aria-label', '그림을 화면 가득 크게 보기');
+      this.hint.textContent = '끌어서 옮기기 · 두 손가락이나 Ctrl+휠로 확대';
+      window.removeEventListener('resize', this.onResizeFull);
+      if (document.fullscreenElement === this.root && document.exitFullscreen) { try { const r = document.exitFullscreen(); if (r && r.catch) r.catch(() => { }); } catch (_) { } }
+      this.showCard();
+      requestAnimationFrame(() => {
+        this.measure(); this.select(this.active, 0);
+        if (this.from === 'self' && this.active && !narrow()) { const s = document.getElementById(`${this.id}-s${this.active}`); if (s) s.scrollIntoView({ block: 'center' }); }
+        try { if (this.prevFocus && this.prevFocus.focus) this.prevFocus.focus({ preventScroll: true }); } catch (_) { }
+      });
     },
     zoomAt(f, px, py, ms) {
       this.measure();
@@ -229,7 +280,7 @@
       let last = null;
       this.moved = false;
       stage.addEventListener('wheel', e => {
-        if (!(e.ctrlKey || e.metaKey)) return;
+        if (!(e.ctrlKey || e.metaKey || this.isFull)) return;
         e.preventDefault(); cancelAnimationFrame(this.anim); this.measure();
         const r = stage.getBoundingClientRect();
         this.zoomAt(Math.exp(-e.deltaY * (e.deltaMode ? 0.05 : 0.0025)), e.clientX - r.left, e.clientY - r.top, 0);
@@ -265,7 +316,11 @@
         const i = this.order.indexOf(this.active);
         if (e.key === 'ArrowRight' && this.order.length) { e.preventDefault(); this.onPick(this.order[Math.min(this.order.length - 1, i + 1)], 'nav'); }
         else if (e.key === 'ArrowLeft' && i > 0) { e.preventDefault(); this.onPick(this.order[i - 1], 'nav'); }
-        else if (e.key === 'Escape') this.onPick(null, 'home');
+        else if (e.key === 'Escape') { if (this.isFull) this.closeFull(); else this.onPick(null, 'home'); }
+      });
+      document.addEventListener('fullscreenchange', () => {
+        if (this.wasFs && document.fullscreenElement !== this.root && this.isFull) this.closeFull();
+        this.wasFs = document.fullscreenElement === this.root;
       });
       if ('ResizeObserver' in window) {
         new ResizeObserver(() => {
@@ -305,6 +360,7 @@
         mark(id, n);
         if (vw) {
           vw.select(vw.by.has(n) ? n : null);
+          if (vw.isFull) return;
           if (from === 'text' && narrow() && vw.by.has(n)) vw.root.scrollIntoView({ behavior: smooth(), block: 'start' });
           if ((from === 'pin' || from === 'nav') && !narrow() && current) {
             const r = current.getBoundingClientRect();
@@ -430,8 +486,10 @@
     const figureBlock = f => el('div', { class: 'vx-fig' },
       el('h3', null, f.title),
       el('p', { style: 'margin:0' }, f.lead),
+      el('p', { class: 'vx-tap' }, '도판을 누르면 화면 가득 크게 볼 수 있어요.'),
       el('div', { class: 'row' }, f.items.map(it => el('figure', null,
-        el('img', { src: it.src, alt: it.alt, width: it.w, height: it.h, loading: 'lazy' }),
+        el('button', { type: 'button', class: 'pic', 'aria-label': `${it.alt} — 크게 보기`, onclick: () => lightbox(it.src, it.alt, it.cap) },
+          el('img', { src: it.src, alt: it.alt, width: it.w, height: it.h, loading: 'lazy' })),
         el('figcaption', null, it.cap)))),
       f.verses ? el('p', { style: 'margin:0' }, '성경 근거 (개역개정)') : null,
       f.verses ? el('ul', null, f.verses.map(v => el('li', null, el('a', { href: v.url }, v.ref), ` “${v.text}”`))) : null,
@@ -471,10 +529,14 @@
             el('h2', { id: `${id}-h` }, t.title || sec.en),
             el('p', { class: 'vx-sub' }, (t.title ? sub : sub.slice(1)).join(' · '))),
           sec.firstLook ? firstLook(sec.firstLook) : null,
-          el('div', { class: 'vx-thumbs' }, works.map(w => {
-            const s = ex.sections[w];
-            return el('a', { href: `#${w}` }, el('img', { src: s.image.lo, alt: '', loading: 'lazy' }), `그림 ${s.no} · ${s.work.artist}`,
-              s.credit && s.credit.author ? el('small', { class: 'vx-photo' }, `사진 ${s.credit.author} · ${s.credit.license}`) : null);
+          el('p', { class: 'vx-tap' }, '그림을 누르면 화면 가득 크게 볼 수 있어요.'),
+          el('div', { class: 'vx-compare' }, works.map(w => {
+            const s = ex.sections[w], c = s.credit || {};
+            return el('figure', { style: `--ar:${s.image.w / s.image.h}` },
+              el('button', { type: 'button', class: 'pic', 'aria-label': `그림 ${s.no} ${s.work.title} 크게 보기`, onclick: () => viewers[w] && viewers[w].openFull('compare') },
+                el('img', { src: s.image.lo, alt: s.image.alt, width: s.image.w, height: s.image.h, loading: 'lazy' })),
+              el('figcaption', null, el('a', { href: `#${w}` }, `그림 ${s.no} · ${s.work.artist}`),
+                c.author ? el('small', { class: 'vx-photo' }, `사진 ${c.author}, ${c.authorSite || ''} · ${c.license}`) : null));
           })),
           t.box));
       }
@@ -519,6 +581,32 @@
     const h = /^#([a-z0-9]+)-s(\d+)$/.exec(location.hash);
     if (h && ex.sections[h[1]] && !opts.preview) setTimeout(() => api.go(h[1], +h[2]), 60);
     return api;
+  }
+
+  /* 크게 보기 패널에 보여 줄 해설 문장 — 이미 그려진 문장을 그대로 본뜬다(글은 textContent로만 들어가 있다) */
+  function sentenceNode(id, n) {
+    const s = document.getElementById(`${id}-s${n}`);
+    if (!s) return null;
+    const c = s.cloneNode(true);
+    c.removeAttribute('id'); c.className = 'vx-sent';
+    c.querySelectorAll('.vx-sn').forEach(x => x.remove());
+    c.querySelectorAll('.vx-gl').forEach(x => x.replaceWith(document.createTextNode(x.textContent)));
+    c.querySelectorAll('[id]').forEach(x => x.removeAttribute('id'));
+    return c;
+  }
+
+  /* 도판 하나를 화면 가득 — 누르면 실제 크기로 키워 글씨까지 읽을 수 있다 */
+  function lightbox(src, alt, cap) {
+    const prev = document.activeElement;
+    const img = el('img', { src, alt, title: '누르면 실제 크기로 / 다시 누르면 화면에 맞게' });
+    const close = () => { box.remove(); document.documentElement.classList.remove('vx-noscroll'); document.removeEventListener('keydown', key); try { if (prev && prev.focus) prev.focus({ preventScroll: true }); } catch (_) { } };
+    const key = e => { if (e.key === 'Escape') close(); };
+    const x = el('button', { type: 'button', class: 'vx-closefull', 'aria-label': '닫기', onclick: close }, '✕');
+    const box = el('div', { class: 'vx-lightbox', role: 'dialog', 'aria-modal': 'true', 'aria-label': alt }, img, cap ? el('p', null, cap) : null, x);
+    img.addEventListener('click', () => box.classList.toggle('actual'));
+    box.addEventListener('click', e => { if (e.target === box) close(); });
+    document.body.append(box); document.documentElement.classList.add('vx-noscroll'); document.addEventListener('keydown', key);
+    x.focus();
   }
 
   /* 사진가가 이름을 밝혀 달라고 한 사진: 그림 바로 곁에 적는다 */
@@ -589,5 +677,5 @@
     return render(root, ex, window.VCS_TEXT || null, { site, reviewFailed: m ? { why, made: box && box.made } : null });
   }
 
-  window.VCSExhibit = { render, boot, seal, unseal, footer, version: '4' };
+  window.VCSExhibit = { render, boot, seal, unseal, footer, version: '5' };
 })();
