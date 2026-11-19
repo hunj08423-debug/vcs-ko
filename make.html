@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700&family=Noto+Serif+KR:wght@600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="exhibit.css?v=3">
+<link rel="stylesheet" href="exhibit.css?v=4">
 <style>
 .tool{display:flex;flex-direction:column;gap:20px;padding-top:28px;padding-bottom:40px;max-width:880px}
 .step{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px 24px}
@@ -68,6 +68,7 @@
     <div class="vx-btns"><button type="button" class="vx-btn solid" id="seal">검토용 링크 만들기</button></div>
     <div id="sealOut" hidden>
       <label class="linkbox">검토용 링크<input id="reviewUrl" readonly></label>
+      <p class="why" id="pairNote"></p>
       <div class="vx-btns"><button type="button" class="vx-btn" id="copy">링크 복사</button><a class="vx-btn" id="openReview" target="_blank" rel="noopener">새 창에서 열어 보기 ↗</a></div>
       <ol class="howto">
         <li>방금 내려받은 <b id="rname">annunciation.review.js</b> 파일을 GitHub의 vcs-ko 저장소 <code>text</code> 폴더에 올리세요. ‘Add file → Upload files’로 끌어다 놓고 ‘Commit changes’를 누르면, 같은 이름의 빈 파일이 바뀌어요.</li>
@@ -113,7 +114,7 @@
   let EX = null, rows = null, notes = [], fileName = '', timer = 0;
 
   const s = document.createElement('script');
-  s.src = `data/${exId}.js?v=3`;
+  s.src = `data/${exId}.js?v=4`;
   s.onload = () => { EX = window.VCS_EXHIBIT; $('tool-title').textContent = `전시 페이지 만들기 — ${EX.title}`; $('fname').textContent = `${EX.id}.js`; $('rname').textContent = `${EX.id}.review.js`; };
   s.onerror = () => say('bad', `전시 자료(data/${exId}.js)를 찾지 못했어요.`);
   document.head.append(s);
@@ -331,9 +332,10 @@
     const pasted = /#review=([A-Za-z0-9_-]{43})\b/.exec($('oldLink').value || '');
     let keep = pasted ? pasted[1] : null;
     if (!keep) { try { keep = localStorage.getItem(store); } catch (_) { } }
-    let box, key;
-    try { ({ box, key } = await window.VCSExhibit.seal({ text: build(), orig: buildOrig() }, keep || undefined)); }
-    catch (_) { ({ box, key } = await window.VCSExhibit.seal({ text: build(), orig: buildOrig() })); }
+    let box, key, made;
+    try { ({ box, key, made } = await window.VCSExhibit.seal({ text: build(), orig: buildOrig() }, keep || undefined)); }
+    catch (_) { ({ box, key, made } = await window.VCSExhibit.seal({ text: build(), orig: buildOrig() })); }
+    $('pairNote').textContent = `이 링크와 짝인 파일: ${made}에 만든 ${EX.id}.review.js — 사이트에서 이 링크가 안 열리면, 이 시각에 받은 파일이 올라가 있는지 확인하세요.`;
     try { localStorage.setItem(store, key); } catch (_) { }
     save(`${EX.id}.review.js`, `/* 「${EX.title}」 VCS 검토용 잠금 파일 — make.html에서 ${today()}에 만듦. 함께 만든 링크로만 열린다. */\nwindow.VCS_REVIEW = ${JSON.stringify(box)};\n`);
     const base = (window.VCS_SITE && window.VCS_SITE.url) || new URL('.', location.href).href;
@@ -354,7 +356,7 @@
   });
 })();
 </script>
-<script src="site.js?v=3"></script>
-<script src="exhibit.js?v=3"></script>
+<script src="site.js?v=4"></script>
+<script src="exhibit.js?v=4"></script>
 </body>
 </html>

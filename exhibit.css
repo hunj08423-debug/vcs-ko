@@ -105,6 +105,11 @@ main.vx-main{display:flex;flex-direction:column;gap:56px;padding-top:32px;paddin
 .vx-ctl .hint{font-size:13px;color:var(--muted);margin-left:4px}
 .vx-cap{margin:8px 0 0;font-size:14px;line-height:1.6;color:var(--muted)}
 .vx-cap b{color:var(--ink)}
+.vx-photo{font-size:13px;color:var(--muted)}
+.vx-photo a{color:inherit}
+.vx-thumbs .vx-photo{font-size:11px;line-height:1.35}
+.vx-photo-line{margin:8px 0 0;font-size:12px;color:var(--muted)}
+.vx-photo-line a{color:inherit}
 .vx-spot{margin-top:12px;padding:14px 16px;border-radius:12px;background:var(--surface);border:1px solid var(--line)}
 .vx-spot h3{display:flex;align-items:baseline;gap:10px;font-size:18px}
 .vx-spot .no{font:700 30px/1 var(--serif);color:var(--pin)}

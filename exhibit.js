@@ -115,7 +115,9 @@
       zb('그림 전체 보기', '전체', () => onPick(null, 'home')),
       el('span', { class: 'hint' }, '끌어서 옮기기 · 두 손가락이나 Ctrl+휠로 확대'));
     const w = sec.work;
-    this.cap = el('p', { class: 'vx-cap' }, el('b', null, w.artist), el('br'), `${w.title}, ${w.date}`, el('br'), `${w.medium} · ${w.place}`);
+    const pc = sec.credit && sec.credit.author ? sec.credit : null;
+    this.cap = el('p', { class: 'vx-cap' }, el('b', null, w.artist), el('br'), `${w.title}, ${w.date}`, el('br'), `${w.medium} · ${w.place}`,
+      pc ? [el('br'), el('span', { class: 'vx-photo' }, '사진: ', photoCredit(pc))] : null);
     this.card = el('div', { class: 'vx-spot', 'aria-live': 'polite' });
     this.root = el('div', { class: 'vx-viewer' }, this.stage, this.ctl, this.cap, this.card);
     this.root.style.setProperty('--ar', String(im.w / im.h));
@@ -358,7 +360,13 @@
       }
       main.append(bar);
     }
-    if (opts.reviewFailed) main.append(el('p', { class: 'vx-pending' }, '검토용 링크로 번역을 열지 못했어요. 링크가 끝까지 복사됐는지, 지금 올라가 있는 잠금 파일과 한 쌍인지 확인해 주세요. 파일을 막 올렸다면 1~2분 뒤에 다시 열어 보세요. · ', el('span', { lang: 'en' }, 'This preview link could not open the translation. If the file was just updated, please try again in a minute or two.')));
+    if (opts.reviewFailed) {
+      const f = opts.reviewFailed, when = f.made ? `(${f.made}에 만든 것)` : '';
+      const ko = f.why === 'missing' ? '사이트에 아직 잠금 파일이 없어요. 파일을 막 올렸다면 1~2분 뒤에 다시 열어 보세요.'
+        : f.why === 'mismatch' ? `이 링크는 지금 사이트에 올라가 있는 잠금 파일${when}과 짝이 아니에요. 페이지 만들기에 지금 보이는 링크를 쓰거나, 이 링크와 함께 받은 파일을 다시 올려 주세요. 파일을 막 올렸다면 1~2분 뒤에 다시 열어 보세요.`
+        : `검토용 링크로 번역을 열지 못했어요. 링크가 끝까지 복사됐는지, 지금 올라가 있는 잠금 파일${when}과 짝인지 확인해 주세요. 파일을 막 올렸다면 1~2분 뒤에 다시 열어 보세요.`;
+      main.append(el('p', { class: 'vx-pending' }, ko, ' · ', el('span', { lang: 'en' }, 'This preview link could not open the translation. If the file was just updated, please try again in a minute or two.')));
+    }
     if (!T) main.append(el('p', { class: 'vx-pending' }, '해설 번역은 VCS의 확인을 받은 뒤 이 자리에 실립니다. 지금은 문장 번호와 그림 속 자리만 보입니다.'));
 
     /* 본문과 구절 지도 */
@@ -432,7 +440,7 @@
     /* 위키미디어 공용 출처 한 줄 */
     const fileLink = c => el('a', { href: c.url }, `위키미디어 공용 「${c.file}」`);
     const licNode = c => c.license
-      ? [c.author ? `${c.author}, ` : '', c.licenseUrl ? el('a', { href: c.licenseUrl }, c.license) : c.license]
+      ? [c.author ? [photoCredit(c, true), ', '] : '', c.licenseUrl ? el('a', { href: c.licenseUrl }, c.license) : c.license]
       : el('span', { class: 'vx-todo' }, '[사진가·라이선스를 적어 주세요]');
     const creditNode = cr => typeof cr === 'string' ? cr : [cr.text, ' 이미지: ',
       cr.files.map((f, i) => [i ? ', ' : '', fileLink(f), ' (', licNode(f), ')'])];
@@ -465,7 +473,8 @@
           sec.firstLook ? firstLook(sec.firstLook) : null,
           el('div', { class: 'vx-thumbs' }, works.map(w => {
             const s = ex.sections[w];
-            return el('a', { href: `#${w}` }, el('img', { src: s.image.lo, alt: '', loading: 'lazy' }), `그림 ${s.no} · ${s.work.artist}`);
+            return el('a', { href: `#${w}` }, el('img', { src: s.image.lo, alt: '', loading: 'lazy' }), `그림 ${s.no} · ${s.work.artist}`,
+              s.credit && s.credit.author ? el('small', { class: 'vx-photo' }, `사진 ${s.credit.author} · ${s.credit.license}`) : null);
           })),
           t.box));
       }
@@ -485,7 +494,7 @@
       const s = ex.sections[id], w = s.work, c = s.credit || {};
       const head = `그림 ${s.no} — ${w.artist}, ${w.title}, ${w.date}, ${w.place}. 이미지: `;
       return el('li', null, head, c.file
-        ? [fileLink(c), ', ', licNode(c), c.changes ? ` — ${c.changes}` : '']
+        ? [fileLink(c), ', ', licNode(c), c.changes ? ` — ${c.changes}` : '', c.sa ? `. ${c.sa}` : '']
         : el('span', { class: 'vx-todo' }, '[이미지 출처를 적어 주세요]'));
     };
     const figs = works.map(id => ex.sections[id].figure).filter(Boolean);
@@ -512,6 +521,12 @@
     return api;
   }
 
+  /* 사진가가 이름을 밝혀 달라고 한 사진: 그림 바로 곁에 적는다 */
+  function photoCredit(c, plain) {
+    const who = c.authorUrl && !plain ? [c.author, ', ', el('a', { href: c.authorUrl }, c.authorSite || c.authorUrl.replace(/^https?:\/\//, ''))] : [c.author, c.authorSite ? `, ${c.authorSite}` : ''];
+    return plain ? who : [who, ', License ', c.licenseUrl ? el('a', { href: c.licenseUrl }, c.license) : c.license];
+  }
+
   function footer(site) {
     return el('footer', { class: 'vx-foot' }, el('div', { class: 'vx-wrap' },
       el('span', null, el('a', { href: site.home }, site.name), ` · ${site.sub}`),
@@ -523,12 +538,16 @@
     enc(buf) { const u = new Uint8Array(buf); let s = ''; for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000)); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); },
     dec(str) { let t = String(str).replace(/-/g, '+').replace(/_/g, '/'); while (t.length % 4) t += '='; const s = atob(t), u = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i); return u; }
   };
+  /* 열쇠 지문: 열쇠를 드러내지 않고, 링크와 잠금 파일이 짝인지만 알아보는 짧은 표시 */
+  const kidOf = async raw => b64u.enc(await crypto.subtle.digest('SHA-256', raw)).slice(0, 8);
+  const stamp = () => new Date().toLocaleString('ko-KR', { month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' });
   async function seal(obj, keyStr) {
     const raw = keyStr ? b64u.dec(keyStr) : crypto.getRandomValues(new Uint8Array(32)), iv = crypto.getRandomValues(new Uint8Array(12));
     if (raw.length !== 32) throw new Error('열쇠의 길이가 맞지 않아요.');
     const key = await crypto.subtle.importKey('raw', raw, 'AES-GCM', false, ['encrypt']);
     const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, new TextEncoder().encode(JSON.stringify(obj)));
-    return { box: { v: 1, iv: b64u.enc(iv), ct: b64u.enc(ct) }, key: b64u.enc(raw) };
+    const made = stamp();
+    return { box: { v: 1, kid: await kidOf(raw), made, iv: b64u.enc(iv), ct: b64u.enc(ct) }, key: b64u.enc(raw), made };
   }
   async function unseal(box, keyStr) {
     const key = await crypto.subtle.importKey('raw', b64u.dec(keyStr), 'AES-GCM', false, ['decrypt']);
@@ -555,15 +574,20 @@
     root.replaceChildren(el('p', { class: 'vx-opening' }, '검토용 번역을 여는 중… · Opening the preview…'));
     window.VCS_REVIEW = null;
     await loadFresh(`text/${ex.id}.review.js`);
-    if (window.VCS_REVIEW && window.crypto && crypto.subtle) {
+    const box = window.VCS_REVIEW;
+    let why = box ? 'broken' : 'missing';
+    if (box && window.crypto && crypto.subtle) {
       try {
-        const p = await unseal(window.VCS_REVIEW, key);
-        if (p && p.text && p.text.exhibit === ex.id) return render(root, ex, p.text, { site, preview: true, orig: p.orig || null });
+        if (box.kid && box.kid !== await kidOf(b64u.dec(key))) why = 'mismatch';
+        else {
+          const p = await unseal(box, key);
+          if (p && p.text && p.text.exhibit === ex.id) return render(root, ex, p.text, { site, preview: true, orig: p.orig || null });
+        }
       } catch (_) { }
     }
     if (!m) { try { sessionStorage.removeItem(store); } catch (_) { } }
-    return render(root, ex, window.VCS_TEXT || null, { site, reviewFailed: !!m });
+    return render(root, ex, window.VCS_TEXT || null, { site, reviewFailed: m ? { why, made: box && box.made } : null });
   }
 
-  window.VCSExhibit = { render, boot, seal, unseal, footer, version: '3' };
+  window.VCSExhibit = { render, boot, seal, unseal, footer, version: '4' };
 })();

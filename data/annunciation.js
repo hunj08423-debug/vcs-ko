@@ -52,8 +52,13 @@ window.VCS_EXHIBIT = {
         lo: 'img/annunciation/simone-1400.jpg', hi: 'img/annunciation/simone-3400.jpg',
         alt: '시모네 마르티니와 리포 멤미의 〈수태고지〉 제단화 전체. 가운데 왼쪽에 무릎 꿇은 가브리엘, 오른쪽 옥좌에 앉은 성모, 양옆에 두 성인.'
       },
-      // 2022년 미술관에서 액자째 찍은 사진. 사진가 이름과 라이선스는 파일 페이지의 'Use this file' 문구로 채운다.
-      credit: { file: 'Galería Uffizi, Florencia, Italia, 2022-09-18, DD 26.jpg', url: 'https://commons.wikimedia.org/wiki/File:Galer%C3%ADa_Uffizi,_Florencia,_Italia,_2022-09-18,_DD_26.jpg', author: '', license: '', changes: '일부를 잘라 내고 크기를 줄임' },
+      // 2022년 9월 18일 미술관에서 액자째 찍은 사진(Diego Delso, CC BY-SA 4.0). 사진가는 "Diego Delso, delso.photo, License CC BY-SA"를 그림 곁에 읽기 쉽게 적어 달라고 했다.
+      credit: {
+        file: 'Galería Uffizi, Florencia, Italia, 2022-09-18, DD 26.jpg', url: 'https://commons.wikimedia.org/wiki/File:Galer%C3%ADa_Uffizi,_Florencia,_Italia,_2022-09-18,_DD_26.jpg',
+        author: 'Diego Delso', authorSite: 'delso.photo', authorUrl: 'https://delso.photo',
+        license: 'CC BY-SA 4.0', licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0/deed.ko',
+        changes: '일부를 잘라 내고 크기를 줄임', sa: '이렇게 고친 사진도 같은 CC BY-SA 4.0을 따릅니다'
+      },
       viewNote: '9번 문장은 그림의 특정 부분을 가리키지 않습니다. 사진은 액자째 찍은 것이라 양옆의 두 성인과 위쪽의 예언자 메달까지 보입니다.',
       spots: [
         { n: 1, label: '막 내려앉은 가브리엘', look: '공작 깃털 날개가 아직 위로 치켜 올라가 있고, 가브리엘은 막 무릎을 꿇었습니다.', boxes: [[330, 445, 690, 1110]], pins: [[355, 485]] },
