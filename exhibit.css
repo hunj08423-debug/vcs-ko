@@ -180,6 +180,27 @@ main.vx-main{display:flex;flex-direction:column;gap:56px;padding-top:32px;paddin
 .vx-qs h2{font-size:24px;margin:6px 0 10px}
 .vx-qs ol{margin:0 0 12px;padding-left:22px;color:var(--ink2)}
 
+/* 뒷이야기: 더 궁금한 독자를 위해 접어 둔 글 */
+.vx-back{margin:4px 0 20px;padding:10px 18px 8px;border-radius:14px;background:var(--sand);font-size:15px;line-height:1.75}
+.vx-back .tag{margin:2px 0 2px;font-size:13px;font-weight:700;color:var(--earth);letter-spacing:.04em}
+.vx-back details{border-top:1px dashed light-dark(#D9CDB8,#4A4032)}
+.vx-back details:first-of-type{border-top:0}
+.vx-back summary{cursor:pointer;padding:9px 0;font-weight:700;color:var(--ink)}
+.vx-back summary::marker{color:var(--earth)}
+.vx-back .in{padding:0 0 12px}
+.vx-back .in p{margin:0 0 8px;color:var(--ink2)}
+.vx-back .meta{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;margin:0;font-size:13.5px;color:var(--muted)}
+.vx-back .meta .vx-chip{min-height:34px;padding:0 12px;font-size:13px}
+.vx-en-on .vx-back .vx-en,.vx-en-on .vx-more .vx-en{margin:0 0 8px;font-size:14.5px}
+
+/* VCS를 더 만나 보세요 */
+.vx-more{max-width:860px;padding:22px 28px;border-radius:20px;background:var(--soft)}
+.vx-more h2{font-size:22px;margin:0 0 8px}
+.vx-more p{margin:0 0 8px;color:var(--ink2)}
+.vx-more ul{margin:0;padding-left:22px;color:var(--ink2)}
+.vx-more li{margin:4px 0}
+.vx-more .vx-btns{margin:14px 0 0}
+
 /* 출처 */
 .vx-credits{border-top:1px solid var(--line);padding-top:24px;font-size:14px;line-height:1.75;color:var(--ink2)}
 .vx-credits h2{font-family:var(--sans);font-size:16px;font-weight:700;color:var(--ink);margin-bottom:12px}
@@ -226,7 +247,8 @@ main.vx-main{display:flex;flex-direction:column;gap:56px;padding-top:32px;paddin
   .vx-sn{border-color:#00699F;color:#00699F}
   .vx-gl{border-bottom:0}
   .vx-work,.vx-comp{break-before:page}
-  .vx-fig,.vx-qs,.vx-map{break-inside:avoid}
+  .vx-fig,.vx-qs,.vx-map,.vx-back details,.vx-more{break-inside:avoid}
+  .vx-back{background:none;border:1px solid #ddd}
   .vx-refs{break-before:avoid}
   .vx-review .vx-btn,.vx-review .vx-en-note,.vx-tap,.vx-closefull{display:none!important}
   .vx-en-on .vx-en{break-inside:avoid}
@@ -277,16 +299,19 @@ html.vx-noscroll{overflow:hidden}
 .vx-home-top .vx-lead{margin:22px 0 0;max-width:640px;font-size:17px;line-height:1.8;color:#F3EEE6}
 .vx-book{display:flex;flex-direction:column;gap:14px}
 .vx-book h2{font-size:22px}
-.vx-ex{display:grid;grid-template-columns:auto minmax(0,1fr);gap:16px 22px;align-items:center;text-decoration:none;color:inherit}
-.vx-ex:hover{border-color:var(--accent)}
+.vx-ex{padding:0}
+.vx-ex:hover,.vx-ex:focus-within{border-color:var(--accent)}
+.vx-ex .go{display:grid;grid-template-columns:auto minmax(0,1fr);gap:16px 22px;align-items:center;padding:20px 24px;text-decoration:none;color:inherit;border-radius:16px}
+.vx-ex .txt{display:block}
 .vx-ex .strip{display:flex;gap:6px}
 .vx-ex .strip img{height:84px;width:auto;border-radius:6px;border:1px solid var(--line)}
 .vx-ex h3{font-size:22px}
-.vx-ex .en{margin:2px 0 0;color:var(--muted);font-size:15px}
-.vx-ex .ref{margin:6px 0 0;font-size:14px;color:var(--ink2)}
+.vx-ex .en{display:block;margin:2px 0 0;color:var(--muted);font-size:15px}
+.vx-ex .ref{display:block;margin:6px 0 0;font-size:14px;color:var(--ink2)}
+.vx-ex .vx-photo-line{margin:-10px 0 0;padding:0 24px 14px}
 .vx-chip-st{display:inline-block;margin-top:8px;padding:2px 10px;border-radius:999px;background:var(--soft);color:var(--earth);font-size:13px;font-weight:700}
 .vx-about{max-width:760px}
 .vx-about h2{font-size:22px;margin-bottom:8px}
 .vx-about ul{margin:0;padding-left:20px}
 .vx-about li{margin:4px 0}
-@media (max-width:600px){.vx-ex{grid-template-columns:minmax(0,1fr)}.vx-ex .strip img{height:64px}}
+@media (max-width:600px){.vx-ex .go{grid-template-columns:minmax(0,1fr)}.vx-ex .strip img{height:64px}}

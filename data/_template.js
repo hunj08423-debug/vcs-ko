@@ -48,6 +48,9 @@ window.VCS_EXHIBIT = {
         // { n: 1, label: '그림 위 이름', look: '그림에서 볼 것', boxes: [[x0, y0, x1, y1]], tags: ['네모 위 이름'], pins: [[x, y]] }
       ]
       // 도판이 더 필요하면 figure: { after: 문장 번호, title, lead, items: [{ src, w, h, alt, cap }], verses, credit } (수태고지 리피 12번 참고)
+      // 뒷이야기(더 궁금한 독자를 위한 사이트의 글)가 있으면, 해설 끝에 접어서 보인다. 비교 해설에도 쓸 수 있다:
+      // backstory: [{ n: [문장 번호], title: '물음 꼴 제목', text: '~요 말투의 짧은 글', en: 'Background note: VCS 검토용 영어 한 줄', src: [{ label: '출처 이름(영어)', href: 'https://…' }] }]
+      // 원문이 틀렸을 수 있는 곳은 뒷이야기가 아니라 VCS 메일로 묻는다. 원문은 맞지만 더 알면 좋은 이야기만 뒷이야기로 쓴다.
     },
 
     work2: { /* work1과 같은 모양, no: 2 */ },

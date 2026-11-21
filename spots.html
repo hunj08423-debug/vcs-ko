@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700&family=Noto+Serif+KR:wght@600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="exhibit.css?v=5">
+<link rel="stylesheet" href="exhibit.css?v=6">
 <style>
 /* 그림 위 번호 찍기 — 해설 문장 번호마다 그림 속 자리(핀·네모)와 이름, '그림에서 볼 것'을 적는 작업대.
    좌표는 전시 페이지와 같다: 가로는 0~ref, 세로는 0~ref×h/w. */
@@ -118,7 +118,7 @@
   </aside>
 </div>
 
-<script src="site.js?v=5"></script>
+<script src="site.js?v=6"></script>
 <script>
 (() => {
   'use strict';
@@ -294,7 +294,7 @@
     $('addCard').parentNode.append($('addCard'));
     $('title').textContent = `그림 위 번호 찍기 — ${exId}`;
     const s = document.createElement('script');
-    s.src = `data/${exId}.js?v=5`;
+    s.src = `data/${exId}.js?v=6`;
     s.onload = () => { if (window.VCS_EXHIBIT) { fromData(window.VCS_EXHIBIT); $('title').textContent = `그림 위 번호 찍기 — ${window.VCS_EXHIBIT.title}`; } start(); };
     s.onerror = () => { alert(`전시 자료(data/${exId}.js)를 찾지 못했어요. 그림 파일을 직접 열어 주세요.`); start(); };
     document.head.append(s);

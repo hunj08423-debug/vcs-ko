@@ -197,15 +197,15 @@
     showCard() {
       const a = this.by.get(this.active), sec = this.sec;
       if (!a) {
-        this.card.replaceChildren(
+        this.card.replaceChildren(...[
           el('p', { style: 'margin:0' }, '그림 위 번호는 해설의 문장 번호예요. 번호를 누르면 그 문장이 말하는 곳으로 다가갑니다.'),
           sec.viewNote ? el('p', { style: 'margin:6px 0 0;color:var(--muted);font-size:14px' }, sec.viewNote) : null,
-          this.order.length ? el('div', { class: 'nav' }, el('button', { type: 'button', onclick: () => this.onPick(this.order[0], 'nav') }, `${this.order[0]}번부터 보기`)) : null);
+          this.order.length ? el('div', { class: 'nav' }, el('button', { type: 'button', onclick: () => this.onPick(this.order[0], 'nav') }, `${this.order[0]}번부터 보기`)) : null].filter(Boolean));
         return;
       }
       const i = this.order.indexOf(a.n);
       const prev = i > 0 ? this.order[i - 1] : null, next = i < this.order.length - 1 ? this.order[i + 1] : null;
-      this.card.replaceChildren(
+      this.card.replaceChildren(...[
         el('h3', null, el('span', { class: 'no' }, String(a.n)), a.label),
         a.look ? el('p', { class: 'look' }, el('b', null, '그림에서 볼 것'), a.look) : null,
         this.isFull ? sentenceNode(this.id, a.n) : null,
@@ -213,7 +213,7 @@
           el('button', { type: 'button', disabled: prev === null, onclick: () => prev !== null && this.onPick(prev, 'nav') }, '이전'),
           el('button', { type: 'button', disabled: next === null, onclick: () => next !== null && this.onPick(next, 'nav') }, '다음'),
           el('button', { type: 'button', onclick: () => this.onPick(null, 'home') }, '전체 그림'),
-          el('button', { type: 'button', class: 'back', onclick: () => { const s = document.getElementById(`${this.id}-s${a.n}`); if (s) s.scrollIntoView({ behavior: smooth(), block: 'center' }); } }, '해설로 돌아가기')));
+          el('button', { type: 'button', class: 'back', onclick: () => { const s = document.getElementById(`${this.id}-s${a.n}`); if (s) s.scrollIntoView({ behavior: smooth(), block: 'center' }); } }, '해설로 돌아가기'))].filter(Boolean));
     },
     openFull(from) {
       if (this.isFull) return;
@@ -443,6 +443,23 @@
           el('div', { class: 'go' }, v.go.map(([id, n]) => el('button', { type: 'button', class: 'vx-chip', onclick: () => api.go(id, n) }, `${workLabel(id)} · ${n}번`))))))));
     }
 
+    /* 뒷이야기: 더 궁금한 독자를 위해 이 사이트가 덧붙인 글. 접어 두고, 인쇄할 때는 펼친다 */
+    const backTo = (id, n) => {
+      api.pick(id, n, 'back');
+      const s = document.getElementById(`${id}-s${n}`);
+      if (s) s.scrollIntoView({ behavior: smooth(), block: 'center' });
+    };
+    const backBlock = (id, list) => el('div', { class: 'vx-back' },
+      el('p', { class: 'tag' }, '뒷이야기 · 이 사이트가 덧붙인 글'),
+      list.map(b => el('details', null,
+        el('summary', null, b.title),
+        el('div', { class: 'in' },
+          (Array.isArray(b.text) ? b.text : [b.text]).map(t => el('p', null, t)),
+          b.en ? el('p', { class: 'vx-en', lang: 'en' }, b.en) : null,
+          el('p', { class: 'meta' },
+            (b.n || []).map(n => el('button', { type: 'button', class: 'vx-chip', onclick: () => backTo(id, n) }, `${n}번 문장 보기`)),
+            b.src && b.src.length ? el('span', { class: 'src' }, '출처 ', b.src.map((s, i) => [i ? ' · ' : '', el('a', { href: s.href }, s.label)])) : null)))));
+
     /* 해설 한 편의 글 */
     const textBlock = (id, sec) => {
       const tsec = T && T.sections[id];
@@ -478,6 +495,7 @@
         box.append(para);
         if (sec.figure && sec.figure.after >= a && sec.figure.after <= b) box.append(figureBlock(sec.figure));
       }
+      if (sec.backstory && sec.backstory.length) box.append(backBlock(id, sec.backstory));
       box.append(el('p', { class: 'vx-refs' }, '참고 문헌은 ', el('a', { href: sec.url || ex.vcs }, 'VCS 원문'), '에 그대로 있습니다.'));
       const minutes = tsec ? Math.max(1, Math.round(chars / perMin)) : 0;
       return { box, minutes, title: tsec && tsec.title };
@@ -551,6 +569,16 @@
         ex.course ? el('a', { href: ex.course.href, style: 'font-weight:700' }, ex.course.label + ' →') : null));
     }
 
+    /* VCS를 더 만나 보세요: 원문 전시, VCS의 다른 전시, 소식지로 안내한다 */
+    main.append(el('section', { class: 'vx-more', 'aria-labelledby': 'vx-more' },
+      el('h2', { id: 'vx-more' }, 'VCS를 더 만나 보세요'),
+      el('p', null, '이 해설은 킹스 칼리지 런던의 VCS(The Visual Commentary on Scripture)에서 왔어요. VCS에는 성경 구절과 그림 세 점을 함께 읽는 전시가 400편 넘게 있어요.'),
+      el('ul', null,
+        el('li', null, el('a', { href: ex.vcs }, `「${ex.original}」 원문 전시 (영어)`), ' — 그림을 크게 확대해 보고, 참고 문헌도 볼 수 있어요.'),
+        el('li', null, el('a', { href: 'https://thevcs.org/' }, 'VCS의 다른 전시 둘러보기 (영어)')),
+        el('li', null, 'VCS 소식지(무료, 영어)는 VCS 페이지 맨 아래에서 신청할 수 있어요.')),
+      el('p', { class: 'vx-en', lang: 'en' }, 'More from the VCS: the original exhibition, over 400 other exhibitions, and the free VCS newsletter.')));
+
     /* 출처 */
     const imgLine = id => {
       const s = ex.sections[id], w = s.work, c = s.credit || {};
@@ -567,12 +595,12 @@
           el('p', null, `원문: 「${ex.original}」, The Visual Commentary on Scripture, `, el('a', { href: ex.vcs }, ex.vcs.replace(/^https?:\/\//, '')),
             `. 해설: ${ex.author}. 글의 저작권은 필자와 VCS에 있으며, VCS의 허락을 받아 한국어로 옮겼습니다. 번역 글을 다른 곳에 옮겨 실으려면 VCS의 허락이 필요합니다.`),
           el('p', null, ex.translatorNote || `옮긴이: ${ex.translator.ko}. AI 번역 도구로 초벌을 만든 뒤 원문과 대조해 다듬었습니다. 잘못 옮긴 곳을 알려 주시면 고치겠습니다.`),
-          el('p', null, '‘먼저 보기’, ‘그림에서 볼 것’, 낱말 풀이, 구절 지도, 함께 이야기해 볼 질문은 이 사이트가 덧붙인 글입니다.')),
+          el('p', null, '‘먼저 보기’, ‘그림에서 볼 것’, 낱말 풀이, 구절 지도, 뒷이야기, 함께 이야기해 볼 질문, ‘VCS를 더 만나 보세요’는 이 사이트가 덧붙인 글입니다.')),
         el('div', { lang: 'en' },
           el('p', null, `Original: “${ex.original}”, The Visual Commentary on Scripture, `, el('a', { href: ex.vcs }, ex.vcs.replace(/^https?:\/\//, '')),
             `. Commentary by ${ex.author}. Korean translation by ${ex.translator.en}, published with the permission of the VCS.`),
           el('p', null, 'Copyright in the text remains with the author and the VCS. Please ask the VCS before reproducing the translation elsewhere. The translation began as a machine draft and was checked against the original by hand.'),
-          el('p', null, 'The “look first” prompts, picture notes, glossary, verse map and discussion questions are additions by this site.'))),
+          el('p', null, 'The “look first” prompts, picture notes, glossary, verse map, background notes, discussion questions and the “More from the VCS” box are additions by this site.'))),
       el('h3', null, '그림 · Images'),
       el('ul', null, works.map(imgLine), figs.map(f => el('li', null, creditNode(f.credit))))));
 
@@ -677,5 +705,13 @@
     return render(root, ex, window.VCS_TEXT || null, { site, reviewFailed: m ? { why, made: box && box.made } : null });
   }
 
-  window.VCSExhibit = { render, boot, seal, unseal, footer, version: '5' };
+  /* 인쇄(PDF)할 때는 접어 둔 뒷이야기를 모두 펼치고, 끝나면 되돌린다 */
+  window.addEventListener('beforeprint', () => {
+    document.querySelectorAll('.vx-back details:not([open])').forEach(d => { d.open = true; d.dataset.printOpen = '1'; });
+  });
+  window.addEventListener('afterprint', () => {
+    document.querySelectorAll('.vx-back details[data-print-open]').forEach(d => { d.open = false; delete d.dataset.printOpen; });
+  });
+
+  window.VCSExhibit = { render, boot, seal, unseal, footer, version: '6' };
 })();

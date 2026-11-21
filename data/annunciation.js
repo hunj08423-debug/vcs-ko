@@ -38,6 +38,14 @@ window.VCS_EXHIBIT = {
         { n: 8, label: '성모의 흰 홑옷', look: '성모의 옷도 가브리엘의 옷처럼 꾸밈 없는 흰 천입니다.', boxes: [[600, 590, 1160, 1560]], pins: [[1060, 900]] },
         { n: 9, label: '성모의 눈길과 백합 줄기', look: '성모는 침대 구석 벽에 기대 무릎을 세우고 앉아 있습니다. 눈길은 가브리엘이 아니라 왼쪽 아래, 가브리엘이 쥔 백합 줄기 끝 쪽을 향합니다.', boxes: [[890, 495, 1100, 705], [690, 780, 905, 935]], tags: ['성모의 눈길', '태를 가리키는 줄기 끝'], pins: [[1135, 560], [955, 965]] },
         { n: 10, label: 'March라는 글자', look: '왼쪽 아래 구석에 DGR과 March 1850이 적혀 있습니다. 필자는 이 March를 수태고지의 달로 읽었습니다.', boxes: [[10, 2165, 175, 2278]], tags: ['DGR / March 1850'], pins: [[205, 2215]] }
+      ],
+      backstory: [
+        {
+          n: [12], title: '모델은 몇 사람이었을까요?',
+          text: '12번 문장은 남동생이 가브리엘의, 여동생이 마리아의 모델을 섰다고 짧게 말해요. 로세티 아카이브의 기록은 조금 더 자세해요. 가브리엘의 머리는 남동생 윌리엄 마이클과 조각가 토머스 울너를 보고 그렸고, 직업 모델 세 사람도 가브리엘의 모델을 섰어요. 마리아는 처음에 여동생 크리스티나를 보고 그렸고, 머리카락은 러브(Miss Love)라는 직업 모델을 보고 그렸대요.',
+          en: 'Background note: according to the Rossetti Archive, William Michael Rossetti and the sculptor Thomas Woolner sat for Gabriel’s head, and three professional models also sat for Gabriel; Christina sat for the Virgin at first, and a professional model, Miss Love, for her hair.',
+          src: [{ label: '로세티 아카이브(영어)', href: 'https://rossettiarchive.iath.virginia.edu/docs/s44.rap.html' }]
+        }
       ]
     },
 
@@ -115,7 +123,15 @@ window.VCS_EXHIBIT = {
             { file: 'Fra Filippo Lippi.png', url: 'https://commons.wikimedia.org/wiki/File:Fra_Filippo_Lippi.png', license: '퍼블릭 도메인' }
           ]
         }
-      }
+      },
+      backstory: [
+        {
+          n: [3], title: '둥근 그림은 처음부터 둥글었을까요?',
+          text: '지금 이 그림은 위쪽이 둥근 반원 모양이에요. 그런데 런던 내셔널 갤러리는 이 반원 모양이 처음부터 그랬던 것은 아닐 수 있다고 소개해요. 처음에는 네모난 그림이었을 수도 있고, 침대 머리판으로 쓰였을 수도 있대요. 3번 문장이 말하는 그림의 윤곽은 지금 모습을 두고 한 말로 읽으면 돼요.',
+          en: 'Background note: the National Gallery notes that the semicircular shape may not be original; the panel may have been designed as a rectangle, possibly as a bedhead. Sentence 3 can be read as describing its present shape.',
+          src: [{ label: '런던 내셔널 갤러리 작품 소개(영어)', href: 'https://www.nationalgallery.org.uk/paintings/fra-filippo-lippi-the-annunciation' }]
+        }
+      ]
     },
 
     comparative: {
@@ -123,7 +139,28 @@ window.VCS_EXHIBIT = {
       en: 'Phases of the Annunciation',
       url: 'https://thevcs.org/campaign/phases-annunciation',
       match: ['비교'], sentences: 34, paras: [1, 2, 3, 4, 6, 7, 10, 11, 15, 19, 23, 29],
-      firstLook: '세 그림의 마리아를 나란히 보고, 가장 마음이 가는 마리아를 골라 보세요.'
+      firstLook: '세 그림의 마리아를 나란히 보고, 가장 마음이 가는 마리아를 골라 보세요.',
+      backstory: [
+        {
+          n: [11], title: '오른쪽 성녀의 이름은?',
+          text: '11번 문장은 시모네 마르티니 제단화의 오른쪽 성녀를 안사노의 어머니 마시마라고 해요. 이탈리아 문화재 목록도 이 성녀를 마시마로 보지만, 성녀의 발치에 ‘S(ANCTA) IULITTA’(성녀 율리타)라는 글씨가 있고 1458년 목록에는 ‘성녀 마르가리타’로 나온다고 함께 적어 두었어요. 우피치 미술관도 이 그림을 〈성녀 마르가리타와 성 안사노가 있는 수태고지〉라고 불러요. 이름은 달라도 같은 그림이에요.',
+          en: 'Background note: the Italian heritage catalogue identifies the saint as Massima, but also records the inscription S(ANCTA) IULITTA at her feet and the name Saint Margaret in a 1458 inventory; the Uffizi titles the work “Annunciation with St Margaret and St Ansanus”.',
+          src: [
+            { label: '이탈리아 문화재 목록(이탈리아어)', href: 'https://sigecweb.beniculturali.it/sigec/item/print/ICCD15767446' },
+            { label: '우피치 미술관(영어)', href: 'https://www.uffizi.it/en/artworks/annunciation-with-st-margaret-and-st-ansanus' }
+          ]
+        },
+        {
+          n: [13], title: '로렌체티 형제와 두 이름의 그림',
+          text: '런던 내셔널 갤러리는 암브로조 로렌체티를 피에트로의 ‘아마도’ 동생이라고, 한발 물러서서 소개해요. 또 13번 문장의 〈성모의 정결례〉를 우피치 미술관은 〈성전 봉헌〉이라는 이름으로 소개해요. 두 이름은 누가복음 2:22–38의 같은 장면을 가리켜요. 마리아 쪽에서 보면 아이를 낳은 뒤 치르는 정결 예식이고, 아기 예수 쪽에서 보면 하나님께 드리는 봉헌이에요.',
+          en: 'Background note: the National Gallery describes Ambrogio as “probably” Pietro’s brother, and the Uffizi titles Ambrogio’s panel “Presentation at the Temple”; both names refer to the same scene in Luke 2:22–38.',
+          src: [
+            { label: '런던 내셔널 갤러리(영어)', href: 'https://nationalgallery.org.uk/artists/ambrogio-lorenzetti' },
+            { label: '우피치 미술관(영어)', href: 'https://www.uffizi.it/en/artworks/presentation-at-the-temple' },
+            { label: '누가복음 2장(개역개정)', href: 'https://bible.bskorea.or.kr/bible/NKRV/LUK.2' }
+          ]
+        }
+      ]
     }
   },
 

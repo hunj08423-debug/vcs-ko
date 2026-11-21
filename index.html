@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700&family=Noto+Serif+KR:wght@600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="exhibit.css?v=5">
+<link rel="stylesheet" href="exhibit.css?v=6">
 </head>
 <body>
 <!-- VCS의 확인을 받기 전까지는 검색에 나오지 않게(noindex) 둔다. -->
@@ -24,20 +24,23 @@
 <main class="vx-wrap vx-main">
   <section class="vx-book" aria-labelledby="b-luke">
     <h2 id="b-luke">누가복음</h2>
-    <a class="vx-card vx-ex" href="annunciation.html">
-      <span class="strip" aria-hidden="true">
-        <img src="img/annunciation/rossetti-650.jpg" alt="" width="48" height="84">
-        <img src="img/annunciation/simone-1400.jpg" alt="" width="108" height="84">
-        <img src="img/annunciation/lippi-1600.jpg" alt="" width="186" height="84">
-      </span>
-      <div>
-        <h3>수태고지</h3>
-        <p class="en" lang="en">The Annunciation</p>
-        <p class="ref">누가복음 1:26–38 · 그림 3점 · 해설 Dillian Gordon</p>
-        <span class="vx-chip-st">준비 중</span>
-        <p class="vx-photo-line">가운데 그림 사진: Diego Delso, <a href="https://delso.photo">delso.photo</a>, License <a href="https://creativecommons.org/licenses/by-sa/4.0/deed.ko">CC BY-SA 4.0</a></p>
-      </div>
-    </a>
+    <!-- 전시 카드: 링크(a.go) 안에 다른 링크를 넣지 않는다. 사진가 표기처럼 링크가 있는 줄은 a.go 밖, 카드 안에 둔다 -->
+    <div class="vx-card vx-ex">
+      <a class="go" href="annunciation.html">
+        <span class="strip" aria-hidden="true">
+          <img src="img/annunciation/rossetti-650.jpg" alt="" width="48" height="84">
+          <img src="img/annunciation/simone-1400.jpg" alt="" width="108" height="84">
+          <img src="img/annunciation/lippi-1600.jpg" alt="" width="186" height="84">
+        </span>
+        <div class="txt">
+          <h3>수태고지</h3>
+          <span class="en" lang="en">The Annunciation</span>
+          <span class="ref">누가복음 1:26–38 · 그림 3점 · 해설 Dillian Gordon</span>
+          <span class="vx-chip-st">준비 중</span>
+        </div>
+      </a>
+      <p class="vx-photo-line">가운데 그림 사진: Diego Delso, <a href="https://delso.photo">delso.photo</a>, License <a href="https://creativecommons.org/licenses/by-sa/4.0/deed.ko">CC BY-SA 4.0</a></p>
+    </div>
   </section>
 
   <section class="vx-card vx-about" aria-labelledby="about">
@@ -45,11 +48,20 @@
     <ul>
       <li>해설은 원문의 문장 순서와 번호를 그대로 따라 옮깁니다.</li>
       <li>문장 번호를 누르면, 그 문장이 말하는 그림 속 자리로 다가갑니다.</li>
-      <li>‘먼저 보기’, ‘그림에서 볼 것’, 낱말 풀이, 구절 지도, 함께 이야기해 볼 질문은 이 사이트가 덧붙인 글이에요. VCS의 글이 아닙니다.</li>
+      <li>‘먼저 보기’, ‘그림에서 볼 것’, 낱말 풀이, 구절 지도, 뒷이야기, 함께 이야기해 볼 질문은 이 사이트가 덧붙인 글이에요. VCS의 글이 아닙니다.</li>
       <li>해설의 저작권은 필자와 VCS에 있으며, VCS의 허락을 받아 옮깁니다.</li>
       <li>그림은 위키미디어 공용처럼 자유롭게 쓸 수 있는 것만 싣고, 출처를 밝힙니다.</li>
     </ul>
-    <p class="vx-btns" style="margin:16px 0 0"><a class="vx-btn" href="https://thevcs.org/">VCS 사이트 (English) ↗</a></p>
+  </section>
+
+  <section class="vx-more" aria-labelledby="more">
+    <h2 id="more">VCS를 더 만나 보세요</h2>
+    <p>이 사이트의 해설은 모두 킹스 칼리지 런던의 VCS(The Visual Commentary on Scripture)에서 왔어요. VCS에는 성경 구절과 그림 세 점을 함께 읽는 전시가 400편 넘게 있어요.</p>
+    <ul>
+      <li>VCS에서는 영어 원문 해설을 읽고, 그림을 크게 확대해 볼 수 있어요.</li>
+      <li>VCS 소식지(무료, 영어)는 VCS 페이지 맨 아래에서 신청할 수 있어요.</li>
+    </ul>
+    <p class="vx-btns"><a class="vx-btn" href="https://thevcs.org/">VCS 사이트 (English) ↗</a></p>
   </section>
 </main>
 
